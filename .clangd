@@ -2,11 +2,11 @@ CompileFlags:
   Add:
     - "-xc"
     - "-I."
-    - "-IC:/dev/tinyos/tos"
-    - "-IC:/dev/tinyos/tos/types"
-    - "-IC:/dev/tinyos/tos/system"
-    - "-IC:/dev/tinyos/tos/interfaces"
-    - "-IC:/dev/tinyos/tos/lib/timer"
+    - "-Itos"
+    - "-Itos/types"
+    - "-Itos/system"
+    - "-Itos/interfaces"
+    - "-Itos/lib/timer"
     - "-include"
     - "clangd_macros.h"
 
