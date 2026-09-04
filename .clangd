@@ -1,0 +1,17 @@
+CompileFlags:
+  Add:
+    - "-xc"
+    - "-I."
+    - "-IC:/dev/tinyos/tos"
+    - "-IC:/dev/tinyos/tos/types"
+    - "-IC:/dev/tinyos/tos/system"
+    - "-IC:/dev/tinyos/tos/interfaces"
+    - "-IC:/dev/tinyos/tos/lib/timer"
+    - "-include"
+    - "clangd_macros.h"
+
+Diagnostics:
+  Suppress:
+    - "incomplete_type"
+    - "expected_identifier"
+    - "type_specifier_missing"
