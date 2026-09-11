@@ -1,0 +1,3 @@
+The following files within the .vscode dirrectory are gnerated using AI 
+- "launch.json"
+- "run-in-docker.ps1"

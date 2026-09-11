@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run current file in Docker",
+            "type": "node-terminal",
+            "request": "launch",
+            "command": "powershell -ExecutionPolicy Bypass -File \"${workspaceFolder}\\.vscode\\run-in-docker.ps1\"",
+            "env": {
+                "VSCODE_CURRENT_FILE": "${relativeFile}"
+            }
+        }
+    ]
+}
