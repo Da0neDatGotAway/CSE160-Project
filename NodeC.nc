@@ -10,9 +10,13 @@
 #include <Timer.h>
 #include "includes/CommandMsg.h"
 #include "includes/packet.h"
+#include "includes/nDiscover.h"
+
 
 configuration NodeC{
 }
+
+
 implementation {
     components MainC;
     components Node;
@@ -30,4 +34,7 @@ implementation {
 
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
+
+    components NDiscoveryC;
+    Node.Discovery -> NDiscoveryC;
 }

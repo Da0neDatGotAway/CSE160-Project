@@ -43,7 +43,7 @@ implementation{
             dbg(COMMAND_CHANNEL, "A Command has been Issued.\n");
             buff = (uint8_t*) msg->payload;
             commandID = msg->id;
-
+            dbg(COMMAND_CHANNEL, "Command ID: %d, Discover: %d \n,", commandID, CMD_DISCOVER);
             //Find out which command was called and call related command
             switch(commandID){
             // A ping will have the destination of the packet as the first
@@ -76,6 +76,11 @@ implementation{
             case CMD_TEST_SERVER:
                 dbg(COMMAND_CHANNEL, "Command Type: Client\n");
                 signal CommandHandler.setTestServer();
+                break;
+
+            case CMD_DISCOVER:
+                dbg(COMMAND_CHANNEL, "Command Type: Discover\n");
+                signal CommandHandler.discover();
                 break;
 
             default:

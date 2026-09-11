@@ -12,6 +12,9 @@
 #include "includes/CommandMsg.h"
 #include "includes/sendInfo.h"
 #include "includes/channels.h"
+#include "includes/protocol.h"
+
+
 
 module Node{
    uses interface Boot;
@@ -22,10 +25,13 @@ module Node{
    uses interface SimpleSend as Sender;
 
    uses interface CommandHandler;
+
+   uses interface NDiscovery as Discovery;
 }
 
 implementation{
    pack sendPackage;
+   uint8_t discoveryPayload[2];
 
    // Prototypes
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -50,11 +56,33 @@ implementation{
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
       dbg(GENERAL_CHANNEL, "Packet Received\n");
       if(len==sizeof(pack)){
-         pack* myMsg=(pack*) payload;
+         pack* myMsg = (pack*) payload;
+         switch (myMsg->protocol){
+            case PROTOCOL_NDISCOVERY:
+               dbg(GENERAL_CHANNEL, "Discovery Packet Received\n");
+               switch (myMsg->payload[0]){
+                  case SEND:
+                     dbg(GENERAL_CHANNEL, "FUCKING WORK AAAAAH: %d \n", myMsg->payload[0]);
+                     
+                     discoveryPayload[0] = RECEIVE;
+                     discoveryPayload[1] = TOS_NODE_ID;
+                     makePack(&sendPackage, TOS_NODE_ID, 2, 1, 6, 0, discoveryPayload, sizeof(discoveryPayload)); 
+                     call Discovery.discover(sendPackage);
+                     break;
+                  default:
+                     dbg(GENERAL_CHANNEL, "Discovery Packet Type: Receive %d\n", myMsg->payload[1]);
+               }
+
+
+               break;
+         default:
+            dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
+         }
          dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
          return msg;
       }
       dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
+      
       return msg;
    }
 
@@ -80,6 +108,15 @@ implementation{
    event void CommandHandler.setAppServer(){}
 
    event void CommandHandler.setAppClient(){}
+
+   event void CommandHandler.discover(){
+      dbg(GENERAL_CHANNEL, "DISCOVER EVENT \n"); 
+      discoveryPayload[0] = SEND;
+      discoveryPayload[1] = TOS_NODE_ID;
+      makePack(&sendPackage, TOS_NODE_ID, 2, 1, 6, 0, discoveryPayload, sizeof(discoveryPayload)); 
+      dbg(GENERAL_CHANNEL, "DISCOVER STARTING \n"); 
+      call Discovery.discover(sendPackage);
+   }
 
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){
       Package->src = src;
