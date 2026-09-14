@@ -66,8 +66,8 @@ implementation{
                      
                      discoveryPayload[0] = RECEIVE;
                      discoveryPayload[1] = TOS_NODE_ID;
-                     makePack(&sendPackage, TOS_NODE_ID, 2, 1, 6, 0, discoveryPayload, sizeof(discoveryPayload)); 
-                     call Discovery.discover(sendPackage);
+                     makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 1, 6, 0, discoveryPayload, sizeof(discoveryPayload)); 
+                     call Sender.send(sendPackage, myMsg->src);
                      break;
                   default:
                      dbg(GENERAL_CHANNEL, "Discovery Packet Type: Receive %d\n", myMsg->payload[1]);
