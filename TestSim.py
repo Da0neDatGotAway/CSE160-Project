@@ -14,6 +14,7 @@ class TestSim:
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP=3
     CMD_DISCOVER=7
+    CMD_FLOOD=10
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";

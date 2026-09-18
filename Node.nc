@@ -27,6 +27,8 @@ module Node{
    uses interface CommandHandler;
 
    uses interface NDiscovery as Discovery;
+
+   uses interface Flooding;
 }
 
 implementation{
@@ -95,6 +97,9 @@ implementation{
 
 
                break;
+            case PROTOCOL_PING:
+               dbg(GENERAL_CHANNEL, "Ping Packet Received\n");
+               break;
          default:
             dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
          }
@@ -136,6 +141,12 @@ implementation{
       makePack(&sendPackage, TOS_NODE_ID, 2, 1, 6, 0, discoveryPayload, sizeof(discoveryPayload)); 
       dbg(GENERAL_CHANNEL, "DISCOVER STARTING \n"); 
       call Discovery.discover(sendPackage);
+   }
+
+   event void CommandHandler.flood(uint16_t destination, uint8_t *payload){
+      dbg(GENERAL_CHANNEL, "FLOOD EVENT \n");
+      makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      call Flooding.flood(neighbors, sizeof(neighbors), sendPackage);
    }
 
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint16_t seq, uint8_t* payload, uint8_t length){

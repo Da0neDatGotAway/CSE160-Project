@@ -83,6 +83,11 @@ implementation{
                 signal CommandHandler.discover();
                 break;
 
+            case CMD_FLOOD:
+                dbg(COMMAND_CHANNEL, "Command Type: Flood\n");
+                signal CommandHandler.flood(buff[0], &buff[1]);
+                break;
+
             default:
                 dbg(COMMAND_CHANNEL, "CMD_ERROR: \"%d\" does not match any known commands.\n", msg->id);
                 break;

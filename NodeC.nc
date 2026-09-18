@@ -37,4 +37,7 @@ implementation {
 
     components NDiscoveryC;
     Node.Discovery -> NDiscoveryC;
+
+    components FloodingC;
+    Node.Flooding -> FloodingC;
 }

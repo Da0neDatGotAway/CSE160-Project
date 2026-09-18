@@ -28,8 +28,11 @@ def main():
     #s.ping(1, 10, "Hi!");
     s.runTime(1);
 
-    s.sendCMD(7, 1, "CMD_DISCOVER");
+    s.sendCMD(7, 3, "CMD_DISCOVER");
     s.runTime(1);   
+
+    s.sendCMD(s.CMD_FLOOD, 3, "CMD_FLOOD");
+    s.runTime(1);
 
 if __name__ == '__main__':
     main()
