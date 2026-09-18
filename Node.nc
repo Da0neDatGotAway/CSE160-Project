@@ -30,8 +30,14 @@ module Node{
 }
 
 implementation{
+   uint8_t i = 0;
+
    pack sendPackage;
    uint8_t discoveryPayload[2];
+
+   uint8_t nextAvaliable = 0;
+   neighbor neighbors[10];
+   neighbor newNeb;
 
    // Prototypes
    void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -62,15 +68,29 @@ implementation{
                dbg(GENERAL_CHANNEL, "Discovery Packet Received\n");
                switch (myMsg->payload[0]){
                   case SEND:
-                     dbg(GENERAL_CHANNEL, "FUCKING WORK AAAAAH: %d \n", myMsg->payload[0]);
+                     dbg(GENERAL_CHANNEL, "Discovery Packet Type: Receive %d\n", myMsg->payload[1]);
                      
                      discoveryPayload[0] = RECEIVE;
                      discoveryPayload[1] = TOS_NODE_ID;
                      makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 1, 6, 0, discoveryPayload, sizeof(discoveryPayload)); 
                      call Sender.send(sendPackage, myMsg->src);
                      break;
-                  default:
+                  case RECEIVE:
                      dbg(GENERAL_CHANNEL, "Discovery Packet Type: Receive %d\n", myMsg->payload[1]);
+
+                     newNeb.id = myMsg->payload[1];
+                     neighbors[nextAvaliable] = newNeb;
+
+                     ++nextAvaliable;
+                     if(nextAvaliable >= sizeof(neighbors)){
+                        nextAvaliable = 0;
+                     }
+
+                     for(i = 0; i < sizeof(neighbors); i++){
+                        dbg(GENERAL_CHANNEL, "neighbor[%d]: %d\n",i,neighbors[i].id);
+                     }
+                  default:
+                     dbg(GENERAL_CHANNEL, "Recieved unknown discovery packet");
                }
 
 
