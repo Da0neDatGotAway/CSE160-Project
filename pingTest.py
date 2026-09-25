@@ -29,7 +29,7 @@ def main():
     s.runTime(3);  
 
     s.ping(1, 10, "Hi!");
-    s.runTime(2);
+    s.runTime(10);
 
     #s.sendCMD(7, 3, "CMD_DISCOVER");
     #s.runTime(1);   

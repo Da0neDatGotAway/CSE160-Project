@@ -64,7 +64,7 @@ implementation{
 
    void handleRouting(pack* msg){
       dbg(GENERAL_CHANNEL, "Flooding!");
-      signal CommandHandler.flood(msg->dest, (uint8_t*)(msg->payload));
+      signal CommandHandler.flood(msg->dest, (uint8_t*)(msg->payload), 0);
 
    }
    
@@ -106,7 +106,7 @@ implementation{
                      }
 
                      for(i = 0; i < sizeof(neighbors); i++){
-                        dbg(GENERAL_CHANNEL, "neighbor[%d]: %d\n",i,neighbors[i].id);
+                        //dbg(GENERAL_CHANNEL, "neighbor[%d]: %d\n",i,neighbors[i].id);
                      }
                   default:
                      dbg(GENERAL_CHANNEL, "Recieved unknown discovery packet \n");
@@ -125,6 +125,11 @@ implementation{
          }
          if(TOS_NODE_ID == myMsg->dest){
             dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
+            if (myMsg->protocol!=1){
+               
+               signal CommandHandler.flood(myMsg->dest, (uint8_t*)(myMsg->payload), 1);
+            }
+            
          }
          return msg;
       }
@@ -158,7 +163,7 @@ implementation{
          call Sender.send(sendPackage, destination);
       }else{
          dbg(GENERAL_CHANNEL, "Ping Flood \n");
-         signal CommandHandler.flood(destination, payload);
+         signal CommandHandler.flood(destination, payload, 0);
       }
    }
 
@@ -187,10 +192,10 @@ implementation{
       call Discovery.discover(sendPackage);
    }
 
-   event void CommandHandler.flood(uint16_t destination, uint8_t *payload){
+   event void CommandHandler.flood(uint16_t destination, uint8_t *payload, uint16_t protocol){
       dbg(GENERAL_CHANNEL, "FLOOD EVENT \n");
       //magic number 20
-      makePack(&sendPackage, TOS_NODE_ID, destination, 20, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&sendPackage, TOS_NODE_ID, destination, 20, protocol, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
       call Flooding.flood(neighbors, sizeof(neighbors), sendPackage);
    }
 

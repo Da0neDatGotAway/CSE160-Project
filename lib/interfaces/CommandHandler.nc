@@ -10,5 +10,5 @@ interface CommandHandler{
    event void setAppServer();
    event void setAppClient();
    event void discover();
-   event void flood(uint16_t destination, uint8_t *payload);
+   event void flood(uint16_t destination, uint8_t *payload, uint16_t protocol);
 }
