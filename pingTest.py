@@ -25,14 +25,17 @@ def main():
     s.ping(2, 3, "Hello, World");
     s.runTime(1);
 
-    #s.ping(1, 10, "Hi!");
-    s.runTime(1);
-
     s.sendCMD(7, 3, "CMD_DISCOVER");
-    s.runTime(1);   
+    s.runTime(3);  
 
-    s.sendCMD(s.CMD_FLOOD, 3, "CMD_FLOOD");
-    s.runTime(1);
+    s.ping(1, 10, "Hi!");
+    s.runTime(2);
+
+    #s.sendCMD(7, 3, "CMD_DISCOVER");
+    #s.runTime(1);   
+
+    #s.sendCMD(s.CMD_FLOOD, 3, "CMD_FLOOD");
+    #s.runTime(1);
 
 if __name__ == '__main__':
     main()

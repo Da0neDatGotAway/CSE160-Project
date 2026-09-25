@@ -33,6 +33,9 @@ module Node{
 
 implementation{
    uint8_t i = 0;
+   bool b = 0;
+
+   bool ranDiscover = 0;
 
    pack sendPackage;
    uint8_t discoveryPayload[2];
@@ -59,6 +62,12 @@ implementation{
       }
    }
 
+   void handleRouting(pack* msg){
+      dbg(GENERAL_CHANNEL, "Flooding!");
+      signal CommandHandler.flood(msg->dest, (uint8_t*)(msg->payload));
+
+   }
+   
    event void AMControl.stopDone(error_t err){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
@@ -76,12 +85,20 @@ implementation{
                      discoveryPayload[1] = TOS_NODE_ID;
                      makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 1, 6, 0, discoveryPayload, sizeof(discoveryPayload)); 
                      call Sender.send(sendPackage, myMsg->src);
+
+                     //This is bad
+                     if(!ranDiscover){
+                        signal CommandHandler.discover();
+                     }
+                     ranDiscover = 1;
+
                      break;
                   case RECEIVE:
                      dbg(GENERAL_CHANNEL, "Discovery Packet Type: Receive %d\n", myMsg->payload[1]);
 
                      newNeb.id = myMsg->payload[1];
                      neighbors[nextAvaliable] = newNeb;
+
 
                      ++nextAvaliable;
                      if(nextAvaliable >= sizeof(neighbors)){
@@ -92,18 +109,23 @@ implementation{
                         dbg(GENERAL_CHANNEL, "neighbor[%d]: %d\n",i,neighbors[i].id);
                      }
                   default:
-                     dbg(GENERAL_CHANNEL, "Recieved unknown discovery packet");
+                     dbg(GENERAL_CHANNEL, "Recieved unknown discovery packet \n");
                }
 
 
                break;
             case PROTOCOL_PING:
-               dbg(GENERAL_CHANNEL, "Ping Packet Received\n");
+               dbg(GENERAL_CHANNEL, "Ping Packet Received, dest: %d\n", myMsg->dest);
+               if(TOS_NODE_ID != myMsg->dest){
+                  handleRouting(myMsg);
+               }
                break;
          default:
             dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
          }
-         dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
+         if(TOS_NODE_ID == myMsg->dest){
+            dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
+         }
          return msg;
       }
       dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
@@ -111,11 +133,33 @@ implementation{
       return msg;
    }
 
+   //TODO: add not rerun if looped neighbors
+   void checkUpdateNeighbor(){
+      if(nextAvaliable == 0){
+         signal CommandHandler.discover();
+      }
+   }
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "PING EVENT \n");
-      makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
-      call Sender.send(sendPackage, destination);
+      //checkUpdateNeighbor();
+      //TODO: abstract the send in node for these functions to go to a buffer where it waits until it has neighbors / is free
+      
+      //b is our reuseable boolean
+      b = 0;
+      for(i = 0; i < sizeof(neighbors); i++){
+         if(neighbors[i].id == destination){
+            b = 1;
+         }
+      }
+      if(b){
+         dbg(GENERAL_CHANNEL, "Ping No Flood \n");
+         makePack(&sendPackage, TOS_NODE_ID, destination, 20, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+         call Sender.send(sendPackage, destination);
+      }else{
+         dbg(GENERAL_CHANNEL, "Ping Flood \n");
+         signal CommandHandler.flood(destination, payload);
+      }
    }
 
    event void CommandHandler.printNeighbors(){}
@@ -145,7 +189,8 @@ implementation{
 
    event void CommandHandler.flood(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "FLOOD EVENT \n");
-      makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      //magic number 20
+      makePack(&sendPackage, TOS_NODE_ID, destination, 20, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
       call Flooding.flood(neighbors, sizeof(neighbors), sendPackage);
    }
 
