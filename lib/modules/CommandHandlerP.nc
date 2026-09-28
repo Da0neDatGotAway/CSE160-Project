@@ -85,7 +85,7 @@ implementation{
 
             case CMD_FLOOD:
                 dbg(COMMAND_CHANNEL, "Command Type: Flood\n");
-                signal CommandHandler.flood(buff[0], &buff[1], buff[2]);
+                signal CommandHandler.flood(buff[0], &buff[1], buff[2], buff[3], buff[4] , buff[5], buff[6]);
                 break;
 
             default:
