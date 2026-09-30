@@ -77,17 +77,17 @@ implementation{
       //dbg(GENERAL_CHANNEL, "Packet Received\n");
       if(len==sizeof(pack)){
          pack* myMsg = (pack*) payload;
-         if (myMsg->TTL < 0){
+         if (myMsg->TTL < 1){
+            dbg(GENERAL_CHANNEL, "Packet Dropped, TTL: %d \n", myMsg->TTL);
             return msg;
          }
-         myMsg->seq++;
          myMsg->TTL--;
          preNeighbor = call AMPacket.source(msg);
          //dbg(GENERAL_CHANNEL, "Packet Source: %d\n", preNeighbor);
          //dbg(GENERAL_CHANNEL, "Origin Source: %d\n", myMsg->src);
          switch (myMsg->protocol){
             case PROTOCOL_NDISCOVERY:
-               dbg(GENERAL_CHANNEL, "Discovery Packet Received\n");
+               dbg(NEIGHBOR_CHANNEL, "Discovery Packet Received\n");
                switch (myMsg->payload[0]){
                   case SEND:
                      dbg(NEIGHBOR_CHANNEL, "Discovery Packet Type: Receive %d\n", myMsg->payload[1]);
@@ -127,15 +127,17 @@ implementation{
 
                break;
             case PROTOCOL_PING:
-               dbg(GENERAL_CHANNEL, "Ping Packet Received, dest: %d TTL: %d \n", myMsg->dest, myMsg->TTL);
+               dbg(FLOODING_CHANNEL, "Ping Packet Received, dest: %d TTL: %d \n", myMsg->dest, myMsg->TTL);
                if(TOS_NODE_ID != myMsg->dest){
                   handleRouting(myMsg, preNeighbor , 0);
+                  dbg(FLOODING_CHANNEL, "Packet Forwarded, dest: %d TTL: %d \n", myMsg->dest, myMsg->TTL);
                }
                break;
             case PROTOCOL_PINGREPLY:
-               dbg(GENERAL_CHANNEL, "Ping Reply Received, dest: %d TTL: %d \n", myMsg->dest, myMsg->TTL);
+               dbg(FLOODING_CHANNEL, "Ping Reply Received, dest: %d TTL: %d \n", myMsg->dest, myMsg->TTL);
                if(TOS_NODE_ID != myMsg->dest){
                   handleRouting(myMsg, preNeighbor, 1);
+                  dbg(FLOODING_CHANNEL, "Packet Forwarded, dest: %d TTL: %d \n", myMsg->dest, myMsg->TTL);
                }
                break;
          default:
