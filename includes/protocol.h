@@ -13,6 +13,9 @@ enum{
 	PROTOCOL_NAME = 3,
 	PROTOCOL_TCP= 4,
 	PROTOCOL_DV = 5,
+	//Node discovery needs to be a seperate protocol from Distance Vector because we want to beable to send split horrizen with poisen reverse, so we need to be careful about who we send to
+	PROTOCOL_NDISCOVERY = 6,
+	PROTOCOL_NDISCOVERYREPLY = 7,
    PROTOCOL_CMD = 99
 };
 
