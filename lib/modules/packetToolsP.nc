@@ -1,15 +1,18 @@
-module packetToolsP{
-   provides interface packetTools;
+module PacketToolsP{
+   provides interface PacketTools;
 }
 
 implementation{
-   command pack packetTools.makePack(uint16_t src, uint16_t dest, uint16_t prevNeighbor, uint8_t type, uint8_t *payload, uint8_t payloadSize){
-      pack newPack;
-      newPack.src = src;
-      newPack.dest = dest;
-      newPack.prevNeighbor = prevNeighbor;
-      newPack.type = type;
-      memcpy(newPack.payload, payload, payloadSize);
-      return newPack;
+   command void makePackNew(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t protocol, uint8_t* payload, uint8_t length){
+      Package->src = src;
+      Package->dest = dest;
+      Package->TTL = TTL;
+      //set sequence number to the one from packetCache
+      Package->seq = 0;
+      Package->protocol = protocol;
+      memcpy(Package->payload, payload, length);
+   }
+   command void makePackPass(pack *Package){
+      --(Package->TTL)
    }
 }
