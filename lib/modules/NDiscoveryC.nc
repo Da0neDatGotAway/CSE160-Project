@@ -8,5 +8,4 @@ implementation{
 
     components new SimpleSendC(AM_PACK);
     NDiscoveryP.Sender -> SimpleSendC;
-    
 }

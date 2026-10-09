@@ -8,5 +8,7 @@ implementation{
       call Sender.send(msg, PACKET_BLAST);
       dbg(NEIGHBOR_CHANNEL, "DISCOVER RAN \n");
       return SUCCESS;
+
+      
    }
 }
