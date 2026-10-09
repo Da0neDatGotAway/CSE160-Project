@@ -10,9 +10,13 @@
 #include <Timer.h>
 #include "includes/CommandMsg.h"
 #include "includes/packet.h"
+#include "includes/nDiscover.h"
+
 
 configuration NodeC{
 }
+
+
 implementation {
     components MainC;
     components Node;
@@ -24,10 +28,20 @@ implementation {
 
     components ActiveMessageC;
     Node.AMControl -> ActiveMessageC;
+    Node.AMPacket -> ActiveMessageC;
 
     components new SimpleSendC(AM_PACK);
     Node.Sender -> SimpleSendC;
 
     components CommandHandlerC;
     Node.CommandHandler -> CommandHandlerC;
+
+    components NDiscoveryC;
+    Node.Discovery -> NDiscoveryC;
+
+    components FloodingC;
+    Node.Flooding -> FloodingC;
+
+    components PacketCacheC;
+    Node.PacketCache -> PacketCacheC;
 }

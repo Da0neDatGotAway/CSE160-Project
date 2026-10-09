@@ -1,8 +1,8 @@
-configuration packetToolsC{
-   provides interface packetTools;
+configuration PacketToolsC{
+   provides interface PacketTools;
 }
 
 implementation{
-    components new packetToolsP();
-    packTools = packetToolsP;
+    components PacketToolsP();
+    PacketTools = PacketToolsP;
 }
