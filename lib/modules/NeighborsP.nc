@@ -26,7 +26,7 @@ implementation{
       call Sender.send(msg, PACKET_BLAST);
       return SUCCESS;
    }
-      command error_t Neighbors.recieveSend(pack sendPackage, message_t* msg, void* payload, uint8_t len){
+   command error_t Neighbors.recieveSend(pack sendPackage, message_t* msg, void* payload, uint8_t len){
       dbg(NEIGHBOR_CHANNEL, "Recieved neighbor send packet from: %d", msg->src);
       PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, msg->src, 1, 6, 0, 0);
 

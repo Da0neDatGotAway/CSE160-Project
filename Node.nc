@@ -22,6 +22,8 @@ module Node{
    uses interface SimpleSend as Sender;
 
    uses interface CommandHandler;
+
+   uses interface Timer<TMilli> as LoopTimer;
    uses interface Neighbors;
 }
 
@@ -30,7 +32,12 @@ implementation{
    uint32_t i = 0;
 
    // Prototypes
-   void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
+   //void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
+
+   void discoverNeighbors(){
+      Neighbors.discover(sendPackage);
+      call Sender.send(sendPackage, );
+   }
 
    event void Boot.booted(){
       call AMControl.start();
@@ -41,6 +48,9 @@ implementation{
    event void AMControl.startDone(error_t err){
       if(err == SUCCESS){
          dbg(GENERAL_CHANNEL, "Radio On\n");
+
+         discoverNeighbors();
+         call LoopTimer.startPeriodic(3000);
       }else{
          //Retry until successful
          call AMControl.start();
@@ -62,7 +72,6 @@ implementation{
       dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
       return msg;
    }
-
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "PING EVENT \n");
@@ -97,4 +106,10 @@ implementation{
    event void CommandHandler.setAppServer(){}
 
    event void CommandHandler.setAppClient(){}
+
+   //this is called at the end of our loop. We may want to replace this with a clock cycle that loops as fast as possible while still giving priority to other threads
+   //and just check the time manually but this works for now
+   event void LoopTimer.fired() {
+        discoverNeighbors();
+    }
 }
