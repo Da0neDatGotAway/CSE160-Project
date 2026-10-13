@@ -8,7 +8,7 @@ module NeighborsP{
 implementation{
    neighbor newNeb;
 
-   void updateNeighbors(uint8_t neighborID){
+   command error_t Neighbors.updateNeighbor(uint8_t neighborID){
       if(NeighborMap.contains(neighborID)){
          newNeb = NeighborMap.get(neighborID);
       }else{
@@ -16,6 +16,7 @@ implementation{
       }
       newNeb.lastRecieveTime = call LocalTime.get();
       NeighborMap.insert(neighborID, newNeb);
+      return SUCCESS;
    }
 
    command error_t Neighbors.discover(pack sendPackage){
@@ -28,16 +29,26 @@ implementation{
       command error_t Neighbors.recieveSend(pack sendPackage, message_t* msg, void* payload, uint8_t len){
       dbg(NEIGHBOR_CHANNEL, "Recieved neighbor send packet from: %d", msg->src);
       PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, msg->src, 1, 6, 0, 0);
-      
-      updateNeighbors();
+
+      //update neighbors used to be here but it's probably better to have it dirrectly in the root receive method.
 
       return SUCCESS;
    }
    command error_t Neighbors.recieveResp(pack sendPackage, ){
       dbg(NEIGHBOR_CHANNEL, "Recieved neighbor recieve packet from: %d", msg->src);
 
-      updateNeighbors();
-
       return SUCCESS;
+   }
+   command uint32_t* Neighbors.getNeighbors(){
+      return NeighborMap.getKeys();
+   }
+   command bool Neighbors.containsNeighbor(uint32_t key){
+      return NeighborMap.contains(key);
+   }
+   command uint16_t Neighbors.neighborSize(){
+      return NeighborMap.size();
+   }
+   command neighbor Neighbors.getNeighbor(uint32_t key){
+      return NeighborMap.get(key);
    }
 }
