@@ -2,7 +2,6 @@
 #include "../../includes/neighbors.h"
 
 interface Neighbors{
-   command error_t updateNeighbor(uint8_t neighborID);
    command error_t discover();
    command error_t recieveSend();
    command error_t recieveResp();

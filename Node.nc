@@ -36,7 +36,6 @@ implementation{
 
    void discoverNeighbors(){
       Neighbors.discover(sendPackage);
-      call Sender.send(sendPackage, );
    }
 
    event void Boot.booted(){
@@ -64,8 +63,6 @@ implementation{
       if(len==sizeof(pack)){
          pack* myMsg=(pack*) payload;
          dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
-
-         call Neighbors.updateNeighbor(myMsg->src);
 
          return msg;
       }

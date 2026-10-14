@@ -12,7 +12,7 @@ implementation{
     components PacketTools;
     NeighborsP.PacketTools -> PacketToolsC;
 
-    components new HashMapC(neighbor, 255);
+    components new HashMapC(neighbor, MAP_SIZE);
     NeighborsP.NeighborMap -> HashMapC;
 
     components LocalTimeMilliC;
