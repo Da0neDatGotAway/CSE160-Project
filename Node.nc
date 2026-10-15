@@ -31,12 +31,14 @@ module Node{
 implementation{
    pack sendPackage;
    uint32_t i = 0;
+   //we need to do this because we can't print dbg on multiple lines since it come pre-packed with all the log data. Honestly because of that it should auto newline. Seems like a jank logging function honestly
+   char awfulTextManipulation[300];
 
    // Prototypes
    //void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
 
    void discoverNeighbors(){
-      call Neighbors.discover(sendPackage);
+      call Neighbors.discover(&sendPackage);
    }
 
    event void Boot.booted(){
@@ -68,9 +70,9 @@ implementation{
          
          switch (myMsg->protocol){
             case PROTOCOL_NDISCOVERY:
-               call Neighbors.recieveSend(sendPackage, msg, payload, len);
+               call Neighbors.recieveSend(&sendPackage, myMsg);
             case PROTOCOL_NDISCOVERYREPLY:
-               call Neighbors.recieveResp(sendPackage, msg, payload, len);
+               call Neighbors.recieveResp(&sendPackage, myMsg);
             default:
                dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
          }
@@ -86,6 +88,7 @@ implementation{
       call Sender.send(sendPackage, destination);
    }
 
+   //TODO: use awfulTextManipulation variable and convert to int because this is NOT legible right now
    event void CommandHandler.printNeighbors(){
       dbg(COMMAND_CHANNEL, "Node: %d Neighbor IDs: [ ", TOS_NODE_ID);
       //protective wrapper because we are using unsigned ints so we can't go less than 0 and might be empty

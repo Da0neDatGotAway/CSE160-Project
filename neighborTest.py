@@ -23,11 +23,12 @@ def main():
 
     #kept just to make sure that this is still working
     # After sending a ping, simulate a little to prevent collision.
-    s.runTime(6000);
+    s.runTime(10);
     #s.ping(2, 3, "Hello, World");
     #s.runTime(1);
 
-    s.printNeighbors(1);
+    s.neighborDMP(1);
+    s.runTime(1);
     #s.runTime(1);
 
 if __name__ == '__main__':

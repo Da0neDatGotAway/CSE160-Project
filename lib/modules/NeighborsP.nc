@@ -27,7 +27,7 @@ implementation{
       call NeighborMap.insert(neighborID, newNeb);
    }
 
-   command error_t Neighbors.discover(pack sendPackage){
+   command error_t Neighbors.discover(pack* sendPackage){
       dbg(NEIGHBOR_CHANNEL, "Called discoved event\n");
 
       //clean out values that are expired
@@ -46,30 +46,33 @@ implementation{
       }
 
       //pack bytes into our time array
-      call PacketTools.packUint32(&timeBuffer, call LocalTime.get());
-      call PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, EMPTY_DEST, 1, 6, , PACKET_HEADER_LENGTH + sizeof(uint32_t));
+      call PacketTools.packUint32(timeBuffer, call LocalTime.get());
+      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, EMPTY_DEST, 1, 6, timeBuffer, PACKET_HEADER_LENGTH + sizeof(uint32_t));
 
-      call Sender.send(msg, PACKET_BLAST);
+      call Sender.send(*sendPackage, PACKET_BLAST);
       return SUCCESS;
    }
-   command error_t Neighbors.recieveSend(pack sendPackage, message_t* msg, void* payload, uint8_t len){
-      dbg(NEIGHBOR_CHANNEL, "Recieved neighbor send packet from: %d", msg->src);
+   command error_t Neighbors.recieveSend(pack* sendPackage, pack* msg){
+      dbg(NEIGHBOR_CHANNEL, "Recieved neighbor send packet from: %d\n", msg->src);
 
       //reuse our temp var i
-      i = call PacketTools.unpackUint32(sendPackage->payload);
+      i = call PacketTools.unpackUint32((uint8_t*)(sendPackage->payload));
       updateNeighbor(msg->src, i);
 
       //pack bytes into our time array
-      call PacketTools.packUint32(&timeBuffer, LocalTime.get());
-      call PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, msg->src, 1, 6, 0, CMD_PACKET_HEADER_LENGTH + sizeof(i));
+      call PacketTools.packUint32(timeBuffer, call LocalTime.get());
+      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, msg->src, 1, 6, timeBuffer, CMD_PACKET_HEADER_LENGTH + sizeof(i));
 
+      call Sender.send(*sendPackage, msg->src);
       return SUCCESS;
    }
    //include sendPackage in the header even though we are not using it for consitancy since this method needs to be called from elsewhere
-   command error_t Neighbors.recieveResp(pack sendPackage, message_t* msg, void* payload, uint8_t len){
-      dbg(NEIGHBOR_CHANNEL, "Recieved neighbor recieve packet from: %d", msg->src);
+   command error_t Neighbors.recieveResp(pack* sendPackage, pack* msg){
+      dbg(NEIGHBOR_CHANNEL, "Recieved neighbor recieve packet from: %d\n", msg->src);
 
-      updateNeighbor(msg->src);
+      //reuse our temp var i
+      i = call PacketTools.unpackUint32((uint8_t*)(sendPackage->payload));
+      updateNeighbor(msg->src, i);
 
       return SUCCESS;
    }
