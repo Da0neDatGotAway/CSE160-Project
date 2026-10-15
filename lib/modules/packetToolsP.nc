@@ -13,7 +13,7 @@ implementation{
       memcpy(Package->payload, payload, length);
    }
    command void PacketTools.makePackPass(pack *Package){
-      --(Package->TTL)
+      --(Package->TTL);
    }
    command void PacketTools.packUint32(uint8_t *bytes, uint32_t value) {
     bytes[0] = (uint8_t)(value >> 24);

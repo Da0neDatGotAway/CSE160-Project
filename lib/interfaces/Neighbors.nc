@@ -2,9 +2,9 @@
 #include "../../includes/neighbors.h"
 
 interface Neighbors{
-   command error_t discover();
-   command error_t recieveSend();
-   command error_t recieveResp();
+   command error_t discover(pack sendPackage);
+   command error_t recieveSend(pack sendPackage, message_t* msg, void* payload, uint8_t len);
+   command error_t recieveResp(pack sendPackage, message_t* msg, void* payload, uint8_t len);
    command uint32_t * getNeighbors();
    command bool containsNeighbor(uint32_t key);
    command uint16_t neighborSize();

@@ -9,7 +9,7 @@ implementation{
     components new SimpleSendC(AM_PACK);
     NeighborsP.Sender -> SimpleSendC;
 
-    components PacketTools;
+    components PacketToolsC;
     NeighborsP.PacketTools -> PacketToolsC;
 
     components new HashMapC(neighbor, MAP_SIZE);

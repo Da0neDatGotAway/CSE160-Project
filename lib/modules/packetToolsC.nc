@@ -3,6 +3,6 @@ configuration PacketToolsC{
 }
 
 implementation{
-    components new PacketToolsP();
-    packTools = PacketToolsP;
+    components PacketToolsP;
+    PacketTools = PacketToolsP;
 }

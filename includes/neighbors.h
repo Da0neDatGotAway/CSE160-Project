@@ -1,10 +1,10 @@
 enum{
     MAP_SIZE = 255,
-    N_FORGET_WEIGHT = 10000
-}
+    N_FORGET_WEIGHT = 15000
+};
 
-typedef nx_struct neighbor{
-	nx_uint8_t id;
+typedef struct neighbor{
+	uint8_t id;
     /*
      * We use the link value to know how good our connection is. We do this
      * using the previous time with a exponantially wheighted moving average.

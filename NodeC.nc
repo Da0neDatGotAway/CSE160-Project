@@ -32,5 +32,11 @@ implementation {
     Node.CommandHandler -> CommandHandlerC;
 
     components new TimerMilliC();
-    Node.LoopTimer -> TimerMilliC();
+    Node.LoopTimer -> TimerMilliC;
+
+    components PacketToolsC;
+    Node.PacketTools -> PacketToolsC;
+
+    components NeighborsC;
+    Node.Neighbors -> NeighborsC;
 }

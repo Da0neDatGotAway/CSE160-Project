@@ -24,6 +24,7 @@ module Node{
    uses interface CommandHandler;
 
    uses interface Timer<TMilli> as LoopTimer;
+   uses interface PacketTools;
    uses interface Neighbors;
 }
 
@@ -35,7 +36,7 @@ implementation{
    //void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
 
    void discoverNeighbors(){
-      Neighbors.discover(sendPackage);
+      call Neighbors.discover(sendPackage);
    }
 
    event void Boot.booted(){
@@ -64,6 +65,15 @@ implementation{
          pack* myMsg=(pack*) payload;
          dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
 
+         
+         switch (myMsg->protocol){
+            case PROTOCOL_NDISCOVERY:
+               call Neighbors.recieveSend(sendPackage, msg, payload, len);
+            case PROTOCOL_NDISCOVERYREPLY:
+               call Neighbors.recieveResp(sendPackage, msg, payload, len);
+            default:
+               dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
+         }
          return msg;
       }
       dbg(GENERAL_CHANNEL, "Unknown Packet Type %d\n", len);
@@ -72,19 +82,20 @@ implementation{
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
       dbg(GENERAL_CHANNEL, "PING EVENT \n");
-      makePack(&sendPackage, TOS_NODE_ID, destination, 0, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      call PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, destination, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
       call Sender.send(sendPackage, destination);
    }
 
    event void CommandHandler.printNeighbors(){
       dbg(COMMAND_CHANNEL, "Node: %d Neighbor IDs: [ ", TOS_NODE_ID);
       //protective wrapper because we are using unsigned ints so we can't go less than 0 and might be empty
-      if(Neighbors.neighborSize > 0){
+      if(call Neighbors.neighborSize() > 0){
+         uint32_t* neighborsPointer = call Neighbors.getNeighbors();
          for(i = 0; i < call Neighbors.neighborSize()-1; i++){
-            dbg(COMMAND_CHANNEL, "%d, ", call Neighbors.getKeys[i]);
+            dbg(COMMAND_CHANNEL, "%d, ", neighborsPointer[i]);
          }
          if(i < call Neighbors.neighborSize()){
-            dbg(COMMAND_CHANNEL, "%d ", call Neighbors.getKeys[i]);
+            dbg(COMMAND_CHANNEL, "%d ", neighborsPointer[i]);
          }
       }
       dbg(COMMAND_CHANNEL, "]\n");
@@ -108,5 +119,5 @@ implementation{
    //and just check the time manually but this works for now
    event void LoopTimer.fired() {
         discoverNeighbors();
-    }
+   }
 }
