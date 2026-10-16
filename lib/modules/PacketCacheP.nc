@@ -13,7 +13,8 @@ implementation {
 
 
   command error_t PacketCache.checkPacket(pack *msg) {
-    if (msg->protocol == 6) {
+    if (msg->protocol == 6 || msg->protocol == 7) { // SIX SEVEN!!!! I blame the teacher for this
+      dbg(FLOODING_CHANNEL, "PacketCache: Ignoring neighbor discovery packet\n");
       return SUCCESS;
     }
     for (i = 0; i < PACKET_CACHE_SIZE; i++) {
