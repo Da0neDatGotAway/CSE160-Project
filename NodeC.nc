@@ -34,6 +34,9 @@ implementation {
     components new TimerMilliC();
     Node.LoopTimer -> TimerMilliC;
 
+    components StringToolsC;
+    Node.StringTools -> StringToolsC;
+
     components PacketToolsC;
     Node.PacketTools -> PacketToolsC;
 

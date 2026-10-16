@@ -24,6 +24,7 @@ module Node{
    uses interface CommandHandler;
 
    uses interface Timer<TMilli> as LoopTimer;
+   uses interface StringTools;
    uses interface PacketTools;
    uses interface Neighbors;
 }
@@ -31,8 +32,9 @@ module Node{
 implementation{
    pack sendPackage;
    uint32_t i = 0;
+   void* tempPointer;
    //we need to do this because we can't print dbg on multiple lines since it come pre-packed with all the log data. Honestly because of that it should auto newline. Seems like a jank logging function honestly
-   char awfulTextManipulation[300];
+   char strBuf[300];
 
    // Prototypes
    //void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -90,18 +92,15 @@ implementation{
 
    //TODO: use awfulTextManipulation variable and convert to int because this is NOT legible right now
    event void CommandHandler.printNeighbors(){
-      dbg(COMMAND_CHANNEL, "Node: %d Neighbor IDs: [ ", TOS_NODE_ID);
+      i = call Neighbors.neighborSize();
+      i = i*sizeof(uint32_t);
+      tempPointer = call Neighbors.getNeighbors();
       //protective wrapper because we are using unsigned ints so we can't go less than 0 and might be empty
-      if(call Neighbors.neighborSize() > 0){
-         uint32_t* neighborsPointer = call Neighbors.getNeighbors();
-         for(i = 0; i < call Neighbors.neighborSize()-1; i++){
-            dbg(COMMAND_CHANNEL, "%d, ", neighborsPointer[i]);
-         }
-         if(i < call Neighbors.neighborSize()){
-            dbg(COMMAND_CHANNEL, "%d ", neighborsPointer[i]);
-         }
+      if(!(call StringTools.getUintListAsString(strBuf, sizeof(strBuf), tempPointer, i, sizeof(uint32_t)))){
+         memcpy(strBuf, "Could not display list. (overflow?)", 36);
       }
-      dbg(COMMAND_CHANNEL, "]\n");
+      
+      dbg(COMMAND_CHANNEL, "Node: %d Neighbor IDs: [ %s ]\n", TOS_NODE_ID, strBuf);
    }
 
    event void CommandHandler.printRouteTable(){}
