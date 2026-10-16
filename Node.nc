@@ -101,8 +101,8 @@ implementation{
                      
                      discoveryPayload[0] = RECEIVE;
                      discoveryPayload[1] = TOS_NODE_ID;
-                     makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 1, 6, call PacketCache.getAndIncrement(), discoveryPayload, sizeof(discoveryPayload));
-                     dbg(GENERAL_CHANNEL, "Got Discovery Packet from %d with seq %d \n", myMsg->src, call PacketCache.getSeqNum()-1); 
+                     makePack(&sendPackage, TOS_NODE_ID, myMsg->src, 1, 6, call PacketCache.getAndIncrement(PROTOCOL_NDISCOVERY), discoveryPayload, sizeof(discoveryPayload));
+                     dbg(GENERAL_CHANNEL, "Got Discovery Packet from %d with seq %d \n", myMsg->src, call PacketCache.getSeqNum(PROTOCOL_NDISCOVERY)-1); 
                      call Sender.send(sendPackage, myMsg->src);
 
                      //This is bad
@@ -187,13 +187,13 @@ implementation{
       }
       if(b){
          dbg(GENERAL_CHANNEL, "Ping No Flood \n");
-         makePack(&sendPackage, TOS_NODE_ID, destination, 20, 0, call PacketCache.getAndIncrement(), payload, PACKET_MAX_PAYLOAD_SIZE);
+         makePack(&sendPackage, TOS_NODE_ID, destination, 20, 0, call PacketCache.getAndIncrement(PROTOCOL_PING), payload, PACKET_MAX_PAYLOAD_SIZE);
          call Sender.send(sendPackage, destination);
-         call PacketCache.incrementSeqNum();
+         call PacketCache.incrementSeqNum(PROTOCOL_PING);
       }else{
          dbg(GENERAL_CHANNEL, "Ping Flood \n");
          signal CommandHandler.flood(destination, payload, 0, TOS_NODE_ID, 20, 0, TOS_NODE_ID);
-         call PacketCache.incrementSeqNum();
+         call PacketCache.incrementSeqNum(PROTOCOL_PING);
       }
    }
 
@@ -217,7 +217,7 @@ implementation{
       dbg(GENERAL_CHANNEL, "DISCOVER EVENT \n"); 
       discoveryPayload[0] = SEND;
       discoveryPayload[1] = TOS_NODE_ID;
-      makePack(&sendPackage, TOS_NODE_ID, 2, 1, 6, call PacketCache.getAndIncrement(), discoveryPayload, sizeof(discoveryPayload)); 
+      makePack(&sendPackage, TOS_NODE_ID, 2, 1, 6, call PacketCache.getAndIncrement(PROTOCOL_NDISCOVERY), discoveryPayload, sizeof(discoveryPayload)); 
       dbg(GENERAL_CHANNEL, "DISCOVER STARTING \n"); 
       call Discovery.discover(sendPackage);
    }
@@ -225,7 +225,7 @@ implementation{
    event void CommandHandler.flood(uint16_t destination, uint8_t *payload, uint16_t protocol, uint16_t src, uint16_t TTL, uint16_t seq, uint16_t prevNeighbor){
       dbg(GENERAL_CHANNEL, "FLOOD EVENT \n");
       //magic number 20
-      makePack(&sendPackage,src, destination, TTL, protocol, call PacketCache.getAndIncrement(), payload, PACKET_MAX_PAYLOAD_SIZE);
+      makePack(&sendPackage,src, destination, TTL, protocol, call PacketCache.getAndIncrement(PROTOCOL_PING), payload, PACKET_MAX_PAYLOAD_SIZE);
       //dbg(GENERAL_CHANNEL, "Sending Flood to node %d with payload: %s \n", destination, sendPackage.payload);
       call Flooding.flood(neighbors, sizeof(neighbors), sendPackage, prevNeighbor);
    }
