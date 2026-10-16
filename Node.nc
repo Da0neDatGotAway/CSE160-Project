@@ -27,6 +27,7 @@ module Node{
    uses interface StringTools;
    uses interface PacketTools;
    uses interface Neighbors;
+   uses interface PacketCache;
 }
 
 implementation{
@@ -68,7 +69,16 @@ implementation{
       if(len==sizeof(pack)){
          pack* myMsg=(pack*) payload;
          dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
-
+                  if (myMsg->TTL < 1){
+            dbg(GENERAL_CHANNEL, "Packet Dropped, TTL: %d \n", myMsg->TTL);
+            return msg;
+         }
+         if (call PacketCache.checkPacket(myMsg) == FAIL){
+            dbg(GENERAL_CHANNEL, "Packet Dropped, Duplicate Packet \n");
+            return msg;
+         }
+         
+         myMsg->TTL--;
          
          switch (myMsg->protocol){
             case PROTOCOL_NDISCOVERY:

@@ -26,4 +26,7 @@ implementation{
 
    SimpleSendP.Pool -> PoolC;
    SimpleSendP.Queue -> QueueC;
+
+   components PacketCacheC;
+   SimpleSendP.PacketCache -> PacketCacheC;
 }

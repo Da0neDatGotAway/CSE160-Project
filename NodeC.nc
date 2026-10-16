@@ -42,4 +42,7 @@ implementation {
 
     components NeighborsC;
     Node.Neighbors -> NeighborsC;
+
+    components PacketCacheC;
+    Node.PacketCache -> PacketCacheC;
 }

@@ -24,6 +24,8 @@ generic module SimpleSendP(){
    uses interface AMSend;
 
    uses interface Random;
+
+   uses interface PacketCache;
 }
 
 implementation{
@@ -124,6 +126,8 @@ implementation{
 
          // This coppies the data we have in our message to this new packet type.
          *msg = *message;
+
+         call PacketCache.incrementSeqNum(msg->protocol);
 
          // Attempt to send the packet.
          if(call AMSend.send(dest, &pkt, sizeof(pack)) ==SUCCESS){
