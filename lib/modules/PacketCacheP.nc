@@ -5,8 +5,7 @@ module PacketCacheP {
 }
 
 implementation {
-  CONST uint8_t PROTOCOL_PING = 0;
-  uint16_t seqNum[255]; // This is a bit of a hack but I don't know how else to do it. I want to have a seqNum for each protocol so I can keep track of them separately but I don't know how many protocols there will be so I'm just going to make an array of 255 and use the protocol as the index. This is a bit of a hack but it works for now. If I want to add more protocols in the future I'll have to change this but for now it's fine.
+  uint16_t seqNum[sizeof(uint8_t)]; // This is a bit of a hack but I don't know how else to do it. I want to have a seqNum for each protocol so I can keep track of them separately but I don't know how many protocols there will be so I'm just going to make an array of 255 and use the protocol as the index. This is a bit of a hack but it works for now. If I want to add more protocols in the future I'll have to change this but for now it's fine.
   packetCache cache[PACKET_CACHE_SIZE]; // This fuckass language sucks ass if I wanna use a list I have to declare the max size anyways so why even bother at that point?
   packetCache packet;
   uint8_t cachePos = 0;
