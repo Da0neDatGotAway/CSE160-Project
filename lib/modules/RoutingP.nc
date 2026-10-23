@@ -5,6 +5,7 @@ module RoutingP{
 
 implementation{
    bestRouteToNeighbor routes[256];
+   uint8_t validRoutes[256];
    uint8_t i=0;
 
    command void Routing.sendPacket(pack *msg) {
@@ -26,15 +27,29 @@ implementation{
       return routes[neighbor];
    }
 
-   command bestRouteToNeighbor* Routing.getRoutes() {
+   command uint8_t* Routing.getRoutes() {
+      uint8_t size =0;
       for (i = 0; i < 256; i++) {
          if (routes[i].bestRoute == 0) {
             routes[i].bestRoute = 0;
             routes[i].bestRouteCost = INF;
             routes[i].secondBestRoute = 0;
             routes[i].secondBestRouteCost = INF;
+         } else {
+            validRoutes[size] = i;
+            size++;
          }
       }
-      return routes;
+      return validRoutes;
+   }
+
+   command uint8_t Routing.getSize() {
+      uint8_t size =0;
+      for (i = 0; i < 256; i++) {
+         if (routes[i].bestRoute != 0) {
+            size++;
+         }
+      }
+      return size;
    }
 }
