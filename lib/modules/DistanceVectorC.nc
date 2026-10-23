@@ -8,4 +8,10 @@ implementation{
 
     components new SimpleSendC(AM_PACK);
     DistanceVectorP.Sender -> SimpleSendC;
+
+    components PacketToolsC;
+    DistanceVectorP.PacketTools -> PacketToolsC;
+
+    components RoutingC;
+    DistanceVectorP.Routing -> RoutingC;
 }
