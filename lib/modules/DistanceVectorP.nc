@@ -55,7 +55,7 @@ implementation{
       }
       return SUCCESS;
    }
-   command error_t DistanceVector.recieveRoute(pack* msg){
+   command error_t DistanceVector.recieveRoute(pack* sendPackage, pack* msg){
       k = (pack->length - PACKET_HEADER_LENGTH)/2;
       for(i = 0; i < k; i++){
          routes[i].route = (msg->src) 

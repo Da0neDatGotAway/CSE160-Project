@@ -45,4 +45,10 @@ implementation {
 
     components PacketCacheC;
     Node.PacketCache -> PacketCacheC;
+
+    components RoutingC;
+    Node.Routing -> RoutingC;
+
+    components DistanceVectorC;
+    Node.DistanceVector -> DistanceVectorC;
 }

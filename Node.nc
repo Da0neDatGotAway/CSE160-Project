@@ -28,6 +28,8 @@ module Node{
    uses interface PacketTools;
    uses interface Neighbors;
    uses interface PacketCache;
+   uses interface Routing;
+   uses interface DistanceVector;
 }
 
 implementation{
@@ -85,6 +87,8 @@ implementation{
                call Neighbors.recieveSend(&sendPackage, myMsg);
             case PROTOCOL_NDISCOVERYREPLY:
                call Neighbors.recieveResp(&sendPackage, myMsg);
+            case PROTOCOL_DV:
+               call DistanceVector.receiveRoute(&sendPackage, myMsg);
             default:
                dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
          }
@@ -113,7 +117,18 @@ implementation{
       dbg(COMMAND_CHANNEL, "Node: %d Neighbor IDs: [ %s ]\n", TOS_NODE_ID, strBuf);
    }
 
-   event void CommandHandler.printRouteTable(){}
+   //update this to a correct routing table
+   event void CommandHandler.printRouteTable(){
+      i = call Routing.getSize();
+      i = i*sizeof(uint8_t);
+      tempPointer = call Routing.getRoutes();
+      //protective wrapper because we are using unsigned ints so we can't go less than 0 and might be empty
+      if(!(call StringTools.getUintListAsString(strBuf, sizeof(strBuf), tempPointer, i, sizeof(uint8_t)))){
+         memcpy(strBuf, "Could not display list. (overflow?)", 36);
+      }
+
+      dbg(COMMAND_CHANNEL, "Node: %d reachable nodes through route: [ %s ]\n", TOS_NODE_ID, strBuf);
+   }
 
    event void CommandHandler.printLinkState(){}
 
@@ -131,5 +146,6 @@ implementation{
    //and just check the time manually but this works for now
    event void LoopTimer.fired() {
         discoverNeighbors();
+        call DistanceVector.sendRoutes(&sendPack);
    }
 }
