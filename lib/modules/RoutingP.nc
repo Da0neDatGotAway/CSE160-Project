@@ -16,6 +16,12 @@ implementation{
       routes[neighbor].secondBestRouteCost = secondBestRouteCost;
    }
    command bestRouteToNeighbor Routing.getRoute(uint8_t neighbor) {
+      if (routes[neighbor].bestRoute == 0) {
+         routes[neighbor].bestRoute = 0;
+         routes[neighbor].bestRouteCost = INF;
+         routes[neighbor].secondBestRoute = 0;
+         routes[neighbor].secondBestRouteCost = INF;
+      }
       return routes[neighbor];
    }
 }
