@@ -5,6 +5,7 @@ module RoutingP{
 
 implementation{
    bestRouteToNeighbor routes[256];
+   uint8_t i=0;
 
    command void Routing.sendPacket(pack *msg) {
       call AMSend.send(AM_BROADCAST_ADDR, msg, sizeof(pack));
@@ -23,5 +24,17 @@ implementation{
          routes[neighbor].secondBestRouteCost = INF;
       }
       return routes[neighbor];
+   }
+
+   command bestRouteToNeighbor* Routing.getRoutes() {
+      for (i = 0; i < 256; i++) {
+         if (routes[i].bestRoute == 0) {
+            routes[i].bestRoute = 0;
+            routes[i].bestRouteCost = INF;
+            routes[i].secondBestRoute = 0;
+            routes[i].secondBestRouteCost = INF;
+         }
+      }
+      return routes;
    }
 }
