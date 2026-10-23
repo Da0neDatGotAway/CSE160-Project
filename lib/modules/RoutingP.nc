@@ -7,6 +7,7 @@ implementation{
    bestRouteToNeighbor routes[256];
    uint8_t validRoutes[256];
    uint8_t i=0;
+   uint8_t size=0;
 
    command void Routing.sendPacket(pack *msg) {
       call AMSend.send(AM_BROADCAST_ADDR, msg, sizeof(pack));
@@ -28,7 +29,7 @@ implementation{
    }
 
    command uint8_t* Routing.getRoutes() {
-      uint8_t size =0;
+      size =0;
       for (i = 0; i < 256; i++) {
          if (routes[i].bestRoute == 0) {
             routes[i].bestRoute = 0;
@@ -44,7 +45,7 @@ implementation{
    }
 
    command uint8_t Routing.getSize() {
-      uint8_t size =0;
+      size =0;
       for (i = 0; i < 256; i++) {
          if (routes[i].bestRoute != 0) {
             size++;
