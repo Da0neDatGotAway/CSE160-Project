@@ -47,7 +47,7 @@ implementation{
 
       //pack bytes into our time array
       call PacketTools.packUint32(timeBuffer, call LocalTime.get());
-      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, EMPTY_DEST, 1, 6, timeBuffer, PACKET_HEADER_LENGTH + sizeof(uint32_t));
+      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, EMPTY_DEST, 1, PROTOCOL_NDISCOVERY, timeBuffer, PACKET_HEADER_LENGTH + sizeof(uint32_t));
 
       call Sender.send(*sendPackage, PACKET_BLAST);
       return SUCCESS;
@@ -61,7 +61,8 @@ implementation{
 
       //pack bytes into our time array
       call PacketTools.packUint32(timeBuffer, call LocalTime.get());
-      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, msg->src, 1, 6, timeBuffer, CMD_PACKET_HEADER_LENGTH + sizeof(i));
+      //Double check length impl. Length is stupid.
+      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, msg->src, 1, PROTOCOL_NDISCOVERYREPLY, timeBuffer, CMD_PACKET_HEADER_LENGTH + sizeof(i));
 
       call Sender.send(*sendPackage, msg->src);
       return SUCCESS;

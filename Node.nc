@@ -146,6 +146,6 @@ implementation{
    //and just check the time manually but this works for now
    event void LoopTimer.fired() {
         discoverNeighbors();
-        call DistanceVector.sendRoutes(&sendPack);
+        call DistanceVector.sendRoutes(&sendPackage);
    }
 }

@@ -9,9 +9,6 @@ implementation{
    uint8_t i=0;
    uint8_t size=0;
 
-   command void Routing.sendPacket(pack *msg) {
-      call AMSend.send(AM_BROADCAST_ADDR, msg, sizeof(pack));
-   }
    command void Routing.setRoute(uint8_t neighbor, uint8_t bestRoute, uint8_t bestRouteCost, uint8_t secondBestRoute, uint8_t secondBestRouteCost) {
       routes[neighbor].bestRoute = bestRoute;
       routes[neighbor].bestRouteCost = bestRouteCost;

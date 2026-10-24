@@ -12,6 +12,9 @@ implementation{
     components PacketToolsC;
     DistanceVectorP.PacketTools -> PacketToolsC;
 
+    components NeighborsC;
+    DistanceVectorP.Neighbors -> NeighborsC;
+
     components RoutingC;
     DistanceVectorP.Routing -> RoutingC;
 }

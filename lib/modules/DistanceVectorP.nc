@@ -1,7 +1,9 @@
-#include <stddef.h>
 module DistanceVectorP{
    provides interface DistanceVector;
    uses interface SimpleSend as Sender;
+   uses interface PacketTools;
+   uses interface Neighbors;
+   uses interface Routing;
 }
 
 implementation{
@@ -16,10 +18,12 @@ implementation{
    routeToNeighbor tempRoute;
    //PAYLOAD SIZE / 2
    routeToNeighbor routes[10];
+   //This is a really dumb fix to init everything to 0
+   uint8_t zeroPayload[PACKET_MAX_PAYLOAD_SIZE];
 
    void sendPack(pack* sendPackage, uint32_t length){
-      sendPackage->length = PACKET_HEADER_LENGTH + length + 2;
-      Sender.send(*sendPackage, neighbors[i]);
+      //sendPackage->length = PACKET_HEADER_LENGTH + length + 2;
+      call Sender.send(*sendPackage, neighbors[i]);
    }
 
    command error_t DistanceVector.sendRoutes(pack* sendPackage){
@@ -29,7 +33,7 @@ implementation{
       neighbors = call Neighbors.getNeighbors();
       neighborsSize = call Neighbors.neighborSize();
 
-      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, 0, 1, PROTOCOL_DV, sendPackage->payload, 0);
+      call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, EMPTY_DEST, 1, PROTOCOL_DV, zeroPayload, PACKET_MAX_PAYLOAD_SIZE);
       for(i = 0; i < neighborsSize; i++){
          sendPackage->dest = neighbors[i];
          k = 0;
@@ -39,7 +43,7 @@ implementation{
                sendPackage->payload[k] = validRoutes[j];
                sendPackage->payload[k+1] = tempBestRoute.bestRouteCost;
             }else{
-               sendPackage->payload[k] = validRoutes[i];
+               sendPackage->payload[k] = validRoutes[j];
                sendPackage->payload[k+1] = INF;
             }
             if(k == 18){
@@ -55,12 +59,14 @@ implementation{
       }
       return SUCCESS;
    }
-   command error_t DistanceVector.recieveRoute(pack* sendPackage, pack* msg){
-      k = (pack->length - PACKET_HEADER_LENGTH)/2;
+   command error_t DistanceVector.receiveRoute(pack* sendPackage, pack* msg){
+      k = PACKET_MAX_PAYLOAD_SIZE/2;
       for(i = 0; i < k; i++){
-         routes[i].route = (msg->src) 
-         routes[i].node = (pack->payload)[(i*2)]
-         routes[i].cost = (pack->payload)[(i*2)+1]
+         if((sendPackage->payload)[(i*2)] != 0){
+            routes[i].route = (msg->src) ;
+            routes[i].node = (sendPackage->payload)[(i*2)];
+            routes[i].routeCost = (sendPackage->payload)[(i*2)+1];
+         }
       }
       call DistanceVector.updateRoutes(routes, k);
 
@@ -71,20 +77,20 @@ implementation{
    command error_t DistanceVector.updateRoutes(routeToNeighbor* synced, uint16_t size){ 
       for(i = 0; i < size; i++){
          tempRoute = synced[i];
-         ++(tempRout.cost);
+         ++(tempRoute.routeCost);
          tempBestRoute = call Routing.getRoute(synced[i].node);
-         if(tempBestRoute.bestRouteCost > synced[i].cost + 1){
-            if(tempBestRoute.bestRouteCost < tempRoute.cost && tempRoute.route != tempBestRoute.bestRoute){
+         if(tempBestRoute.bestRouteCost > synced[i].routeCost + 1){
+            if(tempBestRoute.bestRouteCost < tempRoute.routeCost && tempRoute.route != tempBestRoute.bestRoute){
                tempRoute.route = tempBestRoute.bestRoute;
-               tempRoute.cost = tempBestRoute.bestRouteCost;
+               tempRoute.routeCost = tempBestRoute.bestRouteCost;
             }
 
             tempBestRoute.bestRoute = synced[i].route;
-            tempBestRoute.bestRouteCost = synced[i].cost + 1;
+            tempBestRoute.bestRouteCost = synced[i].routeCost + 1;
          }
-         if(tempBestRoute.secondBestRouteCost < tempRoute.cost && tempRoute.route != tempBestRoute.bestRoute){
+         if(tempBestRoute.secondBestRouteCost < tempRoute.routeCost && tempRoute.route != tempBestRoute.bestRoute){
             tempBestRoute.secondBestRoute = tempRoute.route;
-            tempBestRoute.secondBestRouteCost = tempRoute.cost + 1;
+            tempBestRoute.secondBestRouteCost = tempRoute.routeCost + 1;
          }
          call Routing.setRoute(synced[i].node, tempBestRoute.bestRoute, tempBestRoute.bestRouteCost, tempBestRoute.secondBestRoute, tempBestRoute.secondBestRouteCost);
       }
