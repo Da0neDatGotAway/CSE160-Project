@@ -90,9 +90,22 @@ implementation{
    //TODO: call when receving neighbors for dirrect neighbors
    command error_t DistanceVector.updateRoutes(routeToNeighbor* synced, uint16_t size){ 
       for(i = 0; i < size; i++){
+         tempBestRoute = call Routing.getRoute(synced[i].node);
+         //if we were sent a cost of inf for our current best route
+         //update the table to remove the value
+         if(synced[i].routeCost >= INF){
+            if(tempBestRoute.bestRoute == synced[i].route){
+               call Routing.setRoute(synced[i].node, 0, INF, 0, INF);
+            }else if(tempBestRoute.secondBestRoute == synced[i].route){
+               call Routing.setRoute(synced[i].node,
+                  tempBestRoute.bestRoute, tempBestRoute.bestRouteCost,
+                  0, INF);
+            }
+            continue;
+         }
+
          tempRoute = synced[i];
          ++(tempRoute.routeCost);
-         tempBestRoute = call Routing.getRoute(synced[i].node);
          if(tempBestRoute.bestRouteCost > synced[i].routeCost + 1){
             if(tempBestRoute.bestRouteCost < tempRoute.routeCost && tempRoute.route != tempBestRoute.bestRoute){
                tempRoute.route = tempBestRoute.bestRoute;

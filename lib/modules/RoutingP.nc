@@ -16,7 +16,7 @@ implementation{
       routes[destination].secondBestRouteCost = secondBestRouteCost;
    }
    command void Routing.removeRouteThrough(uint8_t node){
-      for(i = 0; i < sizeof(routes); i++){
+      for(i = 0; i < 256; i++){
          if(routes[i].bestRoute == node){
             if(routes[i].secondBestRoute != node){
                routes[i].bestRoute = routes[i].secondBestRoute;
@@ -42,7 +42,7 @@ implementation{
 
    command uint8_t* Routing.getRoutes() {
       size =0;
-      for (i = 0; i < sizeof(routes); i++) {
+      for (i = 0; i < 256; i++) {
          if (routes[i].bestRoute == 0) {
             routes[i].bestRoute = 0;
             routes[i].bestRouteCost = INF;
@@ -58,7 +58,9 @@ implementation{
 
    command uint8_t Routing.getSize() {
       size =0;
-      for (i = 0; i < sizeof(routes); i++) {
+      //magic number 256 because sizeof does not work ????
+      //ghosts myhaps
+      for (i = 0; i < 256; i++) {
          if (routes[i].bestRoute != 0) {
             size++;
          }
