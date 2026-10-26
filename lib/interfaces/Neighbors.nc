@@ -2,6 +2,7 @@
 #include "../../includes/neighbors.h"
 
 interface Neighbors{
+   event void signalNeighborRemoved(uint32_t neighborID);
    command error_t discover(pack* sendPackage);
    command error_t recieveSend(pack* sendPackage, pack* msg);
    command error_t recieveResp(pack* sendPackage, pack* msg);

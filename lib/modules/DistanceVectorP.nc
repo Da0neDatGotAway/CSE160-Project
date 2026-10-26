@@ -26,6 +26,11 @@ implementation{
       call Sender.send(*sendPackage, neighbors[i]);
    }
 
+   event void Neighbors.signalNeighborRemoved(uint32_t neighborID) {
+        // Handle the notification
+        call Routing.removeRouteThrough((uint8_t)neighborID);
+   }
+
    command error_t DistanceVector.sendRoutes(pack* sendPackage){
       //dbg(GENERAL_CHANNEL, "Sending routes to neighbors\n");
       validRoutes = call Routing.getRoutes();
@@ -40,7 +45,7 @@ implementation{
          k = 0;
          for(j = 0; j < routesSize; j++){
             tempBestRoute = call Routing.getRoute(validRoutes[j]);
-            if(validRoutes[j] != neighbors[i]){
+            if(tempBestRoute.bestRoute != neighbors[i]){
                sendPackage->payload[k] = validRoutes[j];
                sendPackage->payload[k+1] = tempBestRoute.bestRouteCost;
             }else{

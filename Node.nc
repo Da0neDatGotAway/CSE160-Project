@@ -47,6 +47,10 @@ implementation{
       call Neighbors.discover(&sendPackage);
    }
 
+   event void Neighbors.signalNeighborRemoved(uint32_t neighborID) {
+      return;
+   }
+
    event void Boot.booted(){
       call AMControl.start();
 

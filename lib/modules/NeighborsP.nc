@@ -28,6 +28,10 @@ implementation{
       newNeb.lastRecieveTime = call LocalTime.get();
       call NeighborMap.insert(neighborID, newNeb);
 
+      //No I'm mad about this. Why does it update routing here. The distance vector can do this already.
+      //I want to abstract this to avoid a bi-dirrectional stack
+
+      //okay on second check I guess routing does not depend on neighbor, so neighbor can depend on it. Still seems fishy.
       directRoute = call Routing.getRoute(neighborID);
       if(directRoute.bestRoute == 0){
          call Routing.setRoute(neighborID, neighborID, 1, 0, INF);
@@ -49,6 +53,7 @@ implementation{
          }
       }
       for(i = 0; i < j; i++){
+         signal Neighbors.signalNeighborRemoved(doubleBuffer[i]);
          call NeighborMap.remove(doubleBuffer[i]);
       }
 
