@@ -21,6 +21,17 @@ implementation{
    //This is a really dumb fix to init everything to 0
    uint8_t zeroPayload[PACKET_MAX_PAYLOAD_SIZE];
 
+   bool containsRoute(routeToNeighbor* advertised, uint16_t size, uint8_t destination){
+      uint16_t index;
+
+      for(index = 0; index < size; index++){
+         if(advertised[index].node == destination){
+            return TRUE;
+         }
+      }
+      return FALSE;
+   }
+
    void sendPack(pack* sendPackage, uint32_t length){
       //sendPackage->length = PACKET_HEADER_LENGTH + length + 2;
       call Sender.send(*sendPackage, neighbors[i]);
@@ -40,7 +51,7 @@ implementation{
          k = 0;
          for(j = 0; j < routesSize; j++){
             tempBestRoute = call Routing.getRoute(validRoutes[j]);
-            if(validRoutes[j] != neighbors[i]){
+            if(tempBestRoute.bestRoute != neighbors[i]){
                sendPackage->payload[k] = validRoutes[j];
                sendPackage->payload[k+1] = tempBestRoute.bestRouteCost;
             }else{
@@ -79,15 +90,37 @@ implementation{
          call DistanceVector.updateRoutes(routes, k);
       }
 
+      validRoutes = call Routing.getRoutes();
+      routesSize = call Routing.getSize();
+      for(i = 0; i < routesSize; i++){
+         tempBestRoute = call Routing.getRoute(validRoutes[i]);
+         if(validRoutes[i] != msg->src &&
+            tempBestRoute.bestRoute == msg->src &&
+            !containsRoute(routes, k, validRoutes[i])){
+            call Routing.setRoute(validRoutes[i], 0, INF, 0, INF);
+         }
+      }
+
       return SUCCESS;
    }
 
    //TODO: call when receving neighbors for dirrect neighbors
    command error_t DistanceVector.updateRoutes(routeToNeighbor* synced, uint16_t size){ 
       for(i = 0; i < size; i++){
+         tempBestRoute = call Routing.getRoute(synced[i].node);
+         if(synced[i].routeCost >= INF){
+            if(tempBestRoute.bestRoute == synced[i].route){
+               call Routing.setRoute(synced[i].node, 0, INF, 0, INF);
+            }else if(tempBestRoute.secondBestRoute == synced[i].route){
+               call Routing.setRoute(synced[i].node,
+                  tempBestRoute.bestRoute, tempBestRoute.bestRouteCost,
+                  0, INF);
+            }
+            continue;
+         }
+
          tempRoute = synced[i];
          ++(tempRoute.routeCost);
-         tempBestRoute = call Routing.getRoute(synced[i].node);
          if(tempBestRoute.bestRouteCost > synced[i].routeCost + 1){
             if(tempBestRoute.bestRouteCost < tempRoute.routeCost && tempRoute.route != tempBestRoute.bestRoute){
                tempRoute.route = tempBestRoute.bestRoute;

@@ -49,6 +49,7 @@ implementation{
          }
       }
       for(i = 0; i < j; i++){
+         call Routing.removeRoutesThrough((uint8_t)doubleBuffer[i]);
          call NeighborMap.remove(doubleBuffer[i]);
       }
 

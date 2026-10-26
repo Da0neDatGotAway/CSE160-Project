@@ -15,6 +15,16 @@ implementation{
       routes[destination].secondBestRoute = secondBestRoute;
       routes[destination].secondBestRouteCost = secondBestRouteCost;
    }
+   command void Routing.removeRoutesThrough(uint8_t nextHop) {
+      for(i = 0; i < 255; i++){
+         if(routes[i].bestRoute == nextHop || routes[i].secondBestRoute == nextHop){
+            routes[i].bestRoute = 0;
+            routes[i].bestRouteCost = INF;
+            routes[i].secondBestRoute = 0;
+            routes[i].secondBestRouteCost = INF;
+         }
+      }
+   }
    command bestRouteToNeighbor Routing.getRoute(uint8_t destination) {
       if (routes[destination].bestRoute == 0) {
          routes[destination].bestRoute = 0;
