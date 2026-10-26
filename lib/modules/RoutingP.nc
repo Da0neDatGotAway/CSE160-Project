@@ -27,7 +27,7 @@ implementation{
 
    command uint8_t* Routing.getRoutes() {
       size =0;
-      for (i = 0; i < 256; i++) {
+      for (i = 0; i < 255; i++) {
          if (routes[i].bestRoute == 0) {
             routes[i].bestRoute = 0;
             routes[i].bestRouteCost = INF;
@@ -43,7 +43,7 @@ implementation{
 
    command uint8_t Routing.getSize() {
       size =0;
-      for (i = 0; i < 256; i++) {
+      for (i = 0; i < 255; i++) {
          if (routes[i].bestRoute != 0) {
             size++;
          }

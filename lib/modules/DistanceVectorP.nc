@@ -27,8 +27,8 @@ implementation{
    }
 
    command error_t DistanceVector.sendRoutes(pack* sendPackage){
+      dbg(GENERAL_CHANNEL, "Sending routes to neighbors\n");
       validRoutes = call Routing.getRoutes();
-      
       routesSize = call Routing.getSize();
 
       neighbors = call Neighbors.getNeighbors();
