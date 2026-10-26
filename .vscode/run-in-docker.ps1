@@ -7,6 +7,7 @@ if (-not $container) {
 
 $file = $env:VSCODE_CURRENT_FILE
 
-docker exec -it $container bash -lc "cd /home/workspace && make micaz sim && python /home/workspace/$file"
+docker exec -i $container bash -lc "cd /home/workspace && make micaz sim && python /home/workspace/$file"
+
 
 exit $LASTEXITCODE

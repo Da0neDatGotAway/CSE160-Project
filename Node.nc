@@ -57,7 +57,7 @@ implementation{
          dbg(GENERAL_CHANNEL, "Radio On\n");
 
          discoverNeighbors();
-         call LoopTimer.startPeriodic(3000);
+         call LoopTimer.startPeriodic(30000);
       }else{
          //Retry until successful
          call AMControl.start();

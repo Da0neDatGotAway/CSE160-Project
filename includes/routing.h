@@ -1,3 +1,6 @@
+#ifndef ROUTING_H
+#define ROUTING_H
+
 enum{
    INF = 16,
 };
@@ -14,3 +17,5 @@ typedef struct bestRouteToNeighbor{
    uint8_t secondBestRoute;
    uint8_t secondBestRouteCost;
 } bestRouteToNeighbor;
+
+#endif

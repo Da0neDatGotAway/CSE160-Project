@@ -56,7 +56,7 @@ implementation{
       dbg(NEIGHBOR_CHANNEL, "Recieved neighbor send packet from: %d\n", msg->src);
 
       //reuse our temp var i
-      i = call PacketTools.unpackUint32((uint8_t*)(sendPackage->payload));
+      i = call PacketTools.unpackUint32((uint8_t*)(msg->payload));
       updateNeighbor(msg->src, i);
 
       //pack bytes into our time array
@@ -72,7 +72,7 @@ implementation{
       dbg(NEIGHBOR_CHANNEL, "Recieved neighbor recieve packet from: %d\n", msg->src);
 
       //reuse our temp var i
-      i = call PacketTools.unpackUint32((uint8_t*)(sendPackage->payload));
+      i = call PacketTools.unpackUint32((uint8_t*)(msg->payload));
       updateNeighbor(msg->src, i);
 
       return SUCCESS;
