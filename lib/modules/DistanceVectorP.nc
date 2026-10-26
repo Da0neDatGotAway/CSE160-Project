@@ -27,7 +27,7 @@ implementation{
    }
 
    command error_t DistanceVector.sendRoutes(pack* sendPackage){
-      dbg(GENERAL_CHANNEL, "Sending routes to neighbors\n");
+      //dbg(GENERAL_CHANNEL, "Sending routes to neighbors\n");
       validRoutes = call Routing.getRoutes();
       routesSize = call Routing.getSize();
 
@@ -61,15 +61,23 @@ implementation{
       return SUCCESS;
    }
    command error_t DistanceVector.receiveRoute(pack* sendPackage, pack* msg){
-      k = PACKET_MAX_PAYLOAD_SIZE/2;
-      for(i = 0; i < k; i++){
-         if((sendPackage->payload)[(i*2)] != 0){
-            routes[i].route = (msg->src) ;
-            routes[i].node = (sendPackage->payload)[(i*2)];
-            routes[i].routeCost = (sendPackage->payload)[(i*2)+1];
+      routesSize = PACKET_MAX_PAYLOAD_SIZE / 2;
+      k = 0;
+
+      for(i = 0; i < routesSize; i++){
+         if(msg->payload[i * 2] == 0){
+            break;
          }
+
+         routes[k].route = msg->src;
+         routes[k].node = msg->payload[i * 2];
+         routes[k].routeCost = msg->payload[(i * 2) + 1];
+         k++;
       }
-      call DistanceVector.updateRoutes(routes, k);
+
+      if(k > 0){
+         call DistanceVector.updateRoutes(routes, k);
+      }
 
       return SUCCESS;
    }

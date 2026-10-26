@@ -5,6 +5,7 @@ module NeighborsP{
    uses interface PacketTools;
    uses interface Hashmap<neighbor> as NeighborMap;
    uses interface LocalTime<TMilli>;
+   uses interface Routing;
 }
 
 implementation{
@@ -15,6 +16,7 @@ implementation{
    uint32_t* neighborsPointer;
    uint8_t timeBuffer[sizeof(uint32_t)];
    uint32_t doubleBuffer[MAP_SIZE];
+   bestRouteToNeighbor directRoute;
 
    void updateNeighbor(uint8_t neighborID, uint32_t sentTime){
       if(call NeighborMap.contains(neighborID)){
@@ -25,6 +27,11 @@ implementation{
       //TODO: replace with moving window or something some day (see neighbors.h)
       newNeb.lastRecieveTime = call LocalTime.get();
       call NeighborMap.insert(neighborID, newNeb);
+
+      directRoute = call Routing.getRoute(neighborID);
+      if(directRoute.bestRoute == 0){
+         call Routing.setRoute(neighborID, neighborID, 1, 0, INF);
+      }
    }
 
    command error_t Neighbors.discover(pack* sendPackage){

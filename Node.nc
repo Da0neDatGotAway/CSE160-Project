@@ -12,6 +12,7 @@
 #include "includes/CommandMsg.h"
 #include "includes/sendInfo.h"
 #include "includes/channels.h"
+#include "includes/routing.h"
 
 module Node{
    uses interface Boot;
@@ -57,7 +58,7 @@ implementation{
          dbg(GENERAL_CHANNEL, "Radio On\n");
 
          discoverNeighbors();
-         call LoopTimer.startPeriodic(30000);
+         call LoopTimer.startPeriodic(500);
       }else{
          //Retry until successful
          call AMControl.start();
@@ -67,10 +68,11 @@ implementation{
    event void AMControl.stopDone(error_t err){}
 
    event message_t* Receive.receive(message_t* msg, void* payload, uint8_t len){
-      dbg(GENERAL_CHANNEL, "Packet Received\n");
+      bestRouteToNeighbor tempRoute;
+      //dbg(GENERAL_CHANNEL, "Packet Received\n");
       if(len==sizeof(pack)){
          pack* myMsg=(pack*) payload;
-         dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
+         //dbg(GENERAL_CHANNEL, "Package Payload: %s\n", myMsg->payload);
                   if (myMsg->TTL < 1){
             dbg(GENERAL_CHANNEL, "Packet Dropped, TTL: %d \n", myMsg->TTL);
             return msg;
@@ -85,12 +87,29 @@ implementation{
          switch (myMsg->protocol){
             case PROTOCOL_NDISCOVERY:
                call Neighbors.recieveSend(&sendPackage, myMsg);
+               break;
             case PROTOCOL_NDISCOVERYREPLY:
                call Neighbors.recieveResp(&sendPackage, myMsg);
+               break;
             case PROTOCOL_DV:
                call DistanceVector.receiveRoute(&sendPackage, myMsg);
+               break;
+            case PROTOCOL_PING:
+               if (myMsg->dest == TOS_NODE_ID){
+                  dbg(GENERAL_CHANNEL, "Ping Recieved from %d\n", myMsg->src);
+               }
+               else if (myMsg->dest != TOS_NODE_ID){
+                  tempRoute = call Routing.getRoute(myMsg->dest);
+                  if(tempRoute.bestRoute == 0){
+                     dbg(GENERAL_CHANNEL, "No route to destination %d\n", myMsg->dest);
+                     return msg;
+                  }
+                  dbg(GENERAL_CHANNEL, "Forwarding Ping from %d to %d via %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute);
+                  call Sender.send(*myMsg, tempRoute.bestRoute);
+               }
+               break;
             default:
-               dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
+               //dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
          }
          return msg;
       }
@@ -99,9 +118,18 @@ implementation{
    }
 
    event void CommandHandler.ping(uint16_t destination, uint8_t *payload){
+      bestRouteToNeighbor tempRoute;
+
       dbg(GENERAL_CHANNEL, "PING EVENT \n");
-      call PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, destination, 0, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
-      call Sender.send(sendPackage, destination);
+      tempRoute = call Routing.getRoute(destination);
+      if(tempRoute.bestRoute == 0){
+         dbg(GENERAL_CHANNEL, "No route to destination %d\n", destination);
+         return;
+      }
+      i = tempRoute.bestRoute;
+      call PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, destination, 16, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
+      dbg(GENERAL_CHANNEL, "Sending Ping from %d to %d via %d\n", TOS_NODE_ID, destination, i);
+      call Sender.send(sendPackage, i);
    }
 
    //TODO: use awfulTextManipulation variable and convert to int because this is NOT legible right now
@@ -117,17 +145,21 @@ implementation{
       dbg(COMMAND_CHANNEL, "Node: %d Neighbor IDs: [ %s ]\n", TOS_NODE_ID, strBuf);
    }
 
-   //update this to a correct routing table
    event void CommandHandler.printRouteTable(){
-      i = call Routing.getSize();
-      i = i*sizeof(uint8_t);
-      tempPointer = call Routing.getRoutes();
-      //protective wrapper because we are using unsigned ints so we can't go less than 0 and might be empty
-      if(!(call StringTools.getUintListAsString(strBuf, sizeof(strBuf), tempPointer, i, sizeof(uint8_t)))){
-         memcpy(strBuf, "Could not display list. (overflow?)", 36);
-      }
+      uint8_t routeCount;
+      uint8_t routeIndex;
+      uint8_t* destinations;
+      bestRouteToNeighbor route;
 
-      dbg(COMMAND_CHANNEL, "Node: %d reachable nodes through route: [ %s ]\n", TOS_NODE_ID, strBuf);
+      destinations = call Routing.getRoutes();
+      routeCount = call Routing.getSize();
+
+      dbg(COMMAND_CHANNEL, "Node: %d accessible routes:\n", TOS_NODE_ID);
+      for(routeIndex = 0; routeIndex < routeCount; routeIndex++){
+         route = call Routing.getRoute(destinations[routeIndex]);
+         dbg(COMMAND_CHANNEL, "  Destination: %d Next hop: %d Cost: %d\n",
+             destinations[routeIndex], route.bestRoute, route.bestRouteCost);
+      }
    }
 
    event void CommandHandler.printLinkState(){}

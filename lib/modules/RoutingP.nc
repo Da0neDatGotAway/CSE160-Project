@@ -9,20 +9,20 @@ implementation{
    uint8_t i=0;
    uint8_t size=0;
 
-   command void Routing.setRoute(uint8_t neighbor, uint8_t bestRoute, uint8_t bestRouteCost, uint8_t secondBestRoute, uint8_t secondBestRouteCost) {
-      routes[neighbor].bestRoute = bestRoute;
-      routes[neighbor].bestRouteCost = bestRouteCost;
-      routes[neighbor].secondBestRoute = secondBestRoute;
-      routes[neighbor].secondBestRouteCost = secondBestRouteCost;
+   command void Routing.setRoute(uint8_t destination, uint8_t bestRoute, uint8_t bestRouteCost, uint8_t secondBestRoute, uint8_t secondBestRouteCost) {
+      routes[destination].bestRoute = bestRoute;
+      routes[destination].bestRouteCost = bestRouteCost;
+      routes[destination].secondBestRoute = secondBestRoute;
+      routes[destination].secondBestRouteCost = secondBestRouteCost;
    }
-   command bestRouteToNeighbor Routing.getRoute(uint8_t neighbor) {
-      if (routes[neighbor].bestRoute == 0) {
-         routes[neighbor].bestRoute = 0;
-         routes[neighbor].bestRouteCost = INF;
-         routes[neighbor].secondBestRoute = 0;
-         routes[neighbor].secondBestRouteCost = INF;
+   command bestRouteToNeighbor Routing.getRoute(uint8_t destination) {
+      if (routes[destination].bestRoute == 0) {
+         routes[destination].bestRoute = 0;
+         routes[destination].bestRouteCost = INF;
+         routes[destination].secondBestRoute = 0;
+         routes[destination].secondBestRouteCost = INF;
       }
-      return routes[neighbor];
+      return routes[destination];
    }
 
    command uint8_t* Routing.getRoutes() {

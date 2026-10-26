@@ -1,5 +1,7 @@
 configuration DistanceVectorC{
     provides interface DistanceVector;
+    uses interface Neighbors;
+    uses interface Routing;
 }
 
 implementation{
@@ -12,9 +14,6 @@ implementation{
     components PacketToolsC;
     DistanceVectorP.PacketTools -> PacketToolsC;
 
-    components NeighborsC;
-    DistanceVectorP.Neighbors -> NeighborsC;
-
-    components RoutingC;
-    DistanceVectorP.Routing -> RoutingC;
+    Neighbors = DistanceVectorP.Neighbors;
+    Routing = DistanceVectorP.Routing;
 }

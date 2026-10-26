@@ -17,4 +17,7 @@ implementation{
 
     components LocalTimeMilliC;
     NeighborsP.LocalTime -> LocalTimeMilliC;
+
+    components RoutingC;
+    NeighborsP.Routing -> RoutingC;
 }

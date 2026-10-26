@@ -51,4 +51,6 @@ implementation {
 
     components DistanceVectorC;
     Node.DistanceVector -> DistanceVectorC;
+    DistanceVectorC.Neighbors -> NeighborsC;
+    DistanceVectorC.Routing -> RoutingC;
 }
