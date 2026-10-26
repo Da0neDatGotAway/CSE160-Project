@@ -105,10 +105,10 @@ implementation{
                else if (myMsg->dest != TOS_NODE_ID){
                   tempRoute = call Routing.getRoute(myMsg->dest);
                   if(tempRoute.bestRoute == 0){
-                     dbg(GENERAL_CHANNEL, "No route to destination %d\n", myMsg->dest);
+                     dbg(ROUTING_CHANNEL, "No route to destination %d\n", myMsg->dest);
                      return msg;
                   }
-                  dbg(GENERAL_CHANNEL, "Forwarding Ping from %d to %d via %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute);
+                  dbg(ROUTING_CHANNEL, "Forwarding Ping from %d to %d via %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute);
                   call Sender.send(*myMsg, tempRoute.bestRoute);
                }
                break;

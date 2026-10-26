@@ -23,13 +23,14 @@ def main():
 
     #kept just to make sure that this is still working
     # After sending a ping, simulate a little to prevent collision.
+    s.runTime(100);
     s.routeDMP(1);
     s.runTime(1);
     s.ping(1, 9, "Hello, World");
     s.runTime(20);
     s.moteOff(3);
     s.runTime(100);
-    s.neighborDMP(1);
+    #s.neighborDMP(1);
     s.routeDMP(1);
     s.runTime(1);
     s.ping(1, 9, "Hello, World");
