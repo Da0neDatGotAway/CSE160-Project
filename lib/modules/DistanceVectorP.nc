@@ -64,9 +64,7 @@ implementation {
     neighbors = call Neighbors.getNeighbors();
     neighborsSize = call Neighbors.neighborSize();
 
-    call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, EMPTY_DEST, 1,
-                                 PROTOCOL_DV, zeroPayload,
-                                 PACKET_MAX_PAYLOAD_SIZE);
+    call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, EMPTY_DEST, 1,PROTOCOL_DV, zeroPayload, PACKET_MAX_PAYLOAD_SIZE);
     for (i = 0; i < neighborsSize; i++) {
       sendPackage->dest = neighbors[i];
       k = 0;
