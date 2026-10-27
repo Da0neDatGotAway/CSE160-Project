@@ -24,6 +24,21 @@ implementation{
    //This is a really dumb fix to init everything to 0
    uint8_t zeroPayload[PACKET_MAX_PAYLOAD_SIZE];
 
+   void queueRemoved(uint8_t destination){
+      uint16_t index;
+
+      for(index = 0; index < removedSize; index++){
+         if(removed[index] == destination){
+            return;
+         }
+      }
+
+      if(removedSize < 256){
+         removed[removedSize] = destination;
+         ++removedSize;
+      }
+   }
+
    void sendPack(pack* sendPackage, uint32_t length){
       //sendPackage->length = PACKET_HEADER_LENGTH + length + 2;
       call Sender.send(*sendPackage, neighbors[i]);
@@ -35,8 +50,7 @@ implementation{
         for(i = 0; i < 256; i++){
            tempBestRoute = call Routing.getRoute(i);
            if(tempBestRoute.bestRoute == (uint8_t)neighborID){
-               removed[removedSize] = (uint8_t)i;
-               ++removedSize;
+               queueRemoved((uint8_t)i);
            }
         }
         call Routing.removeRouteThrough((uint8_t)neighborID);
@@ -117,6 +131,7 @@ implementation{
          if(synced[i].routeCost >= INF){
             if(tempBestRoute.bestRoute == synced[i].route){
                call Routing.setRoute(synced[i].node, 0, INF, 0, INF);
+               queueRemoved(synced[i].node);
             }else if(tempBestRoute.secondBestRoute == synced[i].route){
                call Routing.setRoute(synced[i].node,
                   tempBestRoute.bestRoute, tempBestRoute.bestRouteCost,

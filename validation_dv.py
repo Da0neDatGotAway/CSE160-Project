@@ -147,21 +147,21 @@ def alternative():
 
 
 def partition():
-    """Break 2-3 in a four-node line, then restore it."""
-    sim, output = make_sim("line")
-    remove_bidirectional(sim, 2, 3)
+    """Break 5-6 in a ten-node line, then restore it."""
+    sim, output = make_sim("partition")
+    remove_bidirectional(sim, 5, 6)
     sim.runTime(FAILURE_WAIT)
     log = route_dump(sim, output, 1)
-    assert_no_route(log, 1, 4)
+    assert_no_route(log, 1, 10)
 
-    sim.ping(1, 4, "partitioned")
+    sim.ping(1, 10, "partitioned")
     sim.runTime(SETTLE_WAIT)
-    assert_log(read_output(output), "No route to destination 4")
+    assert_log(read_output(output), "No route to destination 10")
 
-    bidirectional_links(sim, [(2, 3)])
+    bidirectional_links(sim, [(5, 6)])
     sim.runTime(FAILURE_WAIT)
     log = route_dump(sim, output, 1)
-    assert_route(log, 1, 4, 2, 3)
+    assert_route(log, 1, 10, 2, 9)
     print "PASS partition: withdrawal and recovery, failure_wait=%d" % FAILURE_WAIT
 
 
