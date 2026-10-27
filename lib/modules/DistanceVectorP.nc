@@ -17,7 +17,8 @@ implementation{
    bestRouteToNeighbor tempBestRoute;
    routeToNeighbor tempRoute;
 
-   uint8_t removedNode = 0;
+   uint8_t removed[256];
+   uint16_t removedSize;
    //PAYLOAD SIZE / 2
    routeToNeighbor routes[10];
    //This is a really dumb fix to init everything to 0
@@ -30,7 +31,14 @@ implementation{
 
    event void Neighbors.signalNeighborRemoved(uint32_t neighborID) {
         // Handle the notification
-        removedNode = (uint8_t)neighborID;
+        //I HATE MAGIC NUMBERS
+        for(i = 0; i < 256; i++){
+           tempBestRoute = call Routing.getRoute(i);
+           if(tempBestRoute.bestRoute == (uint8_t)neighborID){
+               removed[removedSize] = (uint8_t)i;
+               ++removedSize;
+           }
+        }
         call Routing.removeRouteThrough((uint8_t)neighborID);
    }
 
@@ -46,10 +54,14 @@ implementation{
       for(i = 0; i < neighborsSize; i++){
          sendPackage->dest = neighbors[i];
          k = 0;
-         if(removedNode != 0){
-            sendPackage->payload[k] = removedNode;
+         for(j = 0; j < removedSize; j++){
+            sendPackage->payload[k] = removed[j];
             sendPackage->payload[k+1] = INF;
             k += 2;
+            if(k == 18){
+               sendPack(sendPackage, k);
+               k = 0;
+            }
          }
          for(j = 0; j < routesSize; j++){
             tempBestRoute = call Routing.getRoute(validRoutes[j]);
@@ -71,7 +83,7 @@ implementation{
             sendPack(sendPackage, k);
          }
       }
-      removedNode = 0;
+      removedSize = 0;
       return SUCCESS;
    }
    command error_t DistanceVector.receiveRoute(pack* sendPackage, pack* msg){
