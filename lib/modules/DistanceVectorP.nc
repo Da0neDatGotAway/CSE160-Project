@@ -16,6 +16,8 @@ implementation{
    uint16_t neighborsSize;
    bestRouteToNeighbor tempBestRoute;
    routeToNeighbor tempRoute;
+
+   uint8_t removedNode = 0;
    //PAYLOAD SIZE / 2
    routeToNeighbor routes[10];
    //This is a really dumb fix to init everything to 0
@@ -28,6 +30,7 @@ implementation{
 
    event void Neighbors.signalNeighborRemoved(uint32_t neighborID) {
         // Handle the notification
+        removedNode = (uint8_t)neighborID;
         call Routing.removeRouteThrough((uint8_t)neighborID);
    }
 
@@ -43,6 +46,11 @@ implementation{
       for(i = 0; i < neighborsSize; i++){
          sendPackage->dest = neighbors[i];
          k = 0;
+         if(removedNode != 0){
+            sendPackage->payload[k] = removedNode;
+            sendPackage->payload[k+1] = INF;
+            k += 2;
+         }
          for(j = 0; j < routesSize; j++){
             tempBestRoute = call Routing.getRoute(validRoutes[j]);
             if(tempBestRoute.bestRoute != neighbors[i]){
@@ -63,6 +71,7 @@ implementation{
             sendPack(sendPackage, k);
          }
       }
+      removedNode = 0;
       return SUCCESS;
    }
    command error_t DistanceVector.receiveRoute(pack* sendPackage, pack* msg){
@@ -91,7 +100,7 @@ implementation{
    command error_t DistanceVector.updateRoutes(routeToNeighbor* synced, uint16_t size){ 
       for(i = 0; i < size; i++){
          tempBestRoute = call Routing.getRoute(synced[i].node);
-         //if we were sent a cost of inf for our current best route
+         //if we were sent a cost of inf for our current best route to a node
          //update the table to remove the value
          if(synced[i].routeCost >= INF){
             if(tempBestRoute.bestRoute == synced[i].route){
