@@ -135,7 +135,7 @@ implementation{
                } 
                break;
             default:
-               //dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
+               dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
          }
          return msg;
       }
