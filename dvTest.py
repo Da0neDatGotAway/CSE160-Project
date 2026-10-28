@@ -34,7 +34,7 @@ def main():
     s.routeDMP(1);
     s.runTime(1);
     s.ping(1, 9, "Hello, World");
-    s.runTime(20);
+    s.runTime(100);
 
 if __name__ == '__main__':
     main()

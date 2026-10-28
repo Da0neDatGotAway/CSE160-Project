@@ -98,9 +98,17 @@ implementation{
             case PROTOCOL_DV:
                call DistanceVector.receiveRoute(&sendPackage, myMsg);
                break;
+            //TODO: we should make all the forwarding logic that we now have copy and pasted 3 times into a method for code cleanleness at some point
             case PROTOCOL_PING:
                if (myMsg->dest == TOS_NODE_ID){
-                  dbg(GENERAL_CHANNEL, "Ping Recieved from %d\n", myMsg->src);
+                  dbg(GENERAL_CHANNEL, "Ping Recieved from %d with data %s\n", myMsg->src, myMsg->payload);
+                  call PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, myMsg->src, 16, PROTOCOL_PINGREPLY, myMsg->payload, PACKET_MAX_PAYLOAD_SIZE);
+                  tempRoute = call Routing.getRoute(sendPackage.dest);
+                  if(tempRoute.bestRoute == 0){
+                     dbg(ROUTING_CHANNEL, "No route to destination %d\n", sendPackage.dest);
+                     return msg;
+                  }
+                  call Sender.send(sendPackage, tempRoute.bestRoute);
                }
                else if (myMsg->dest != TOS_NODE_ID){
                   tempRoute = call Routing.getRoute(myMsg->dest);
@@ -110,7 +118,21 @@ implementation{
                   }
                   dbg(ROUTING_CHANNEL, "Forwarding Ping from %d to %d via %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute);
                   call Sender.send(*myMsg, tempRoute.bestRoute);
+               } 
+               break;
+            case PROTOCOL_PINGREPLY:
+               if (myMsg->dest == TOS_NODE_ID){
+                  dbg(GENERAL_CHANNEL, "Ping Reply Recieved from %d\n", myMsg->src);
                }
+               else if (myMsg->dest != TOS_NODE_ID){
+               tempRoute = call Routing.getRoute(myMsg->dest);
+                  if(tempRoute.bestRoute == 0){
+                     dbg(ROUTING_CHANNEL, "No route to destination %d\n", myMsg->dest);
+                     return msg;
+                  }
+                  dbg(ROUTING_CHANNEL, "Forwarding Ping Reply from %d to %d via %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute);
+                  call Sender.send(*myMsg, tempRoute.bestRoute);
+               } 
                break;
             default:
                //dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
