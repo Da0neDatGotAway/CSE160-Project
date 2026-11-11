@@ -41,7 +41,7 @@ implementation {
 
   void sendPack(pack * sendPackage, uint32_t length) {
     // sendPackage->length = PACKET_HEADER_LENGTH + length + 2;
-    call Sender.send(*sendPackage, neighbors[i]);
+    call Sender.send(*sendPackage, neighbors[i], 0);
   }
 
   event void Neighbors.signalNeighborRemoved(uint32_t neighborID) {

@@ -18,7 +18,8 @@ implementation {
     for (i = 0; i < size; i++) {
       if (neighborList[i].id != TOS_NODE_ID && neighborList[i].id != prevNeighbor) {
         dbg(FLOODING_CHANNEL, "Flooding to neighbor %d at I=%d\n", neighborList[i].id, i);
-        if (call Sender.send(msg, neighborList[i].id) != SUCCESS) {
+        //change 0 to 1 if broken
+        if (call Sender.send(msg, neighborList[i].id, 0) != SUCCESS) {
           result = FAIL;
         }
       }

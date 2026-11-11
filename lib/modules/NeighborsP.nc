@@ -61,7 +61,7 @@ implementation{
       call PacketTools.packUint32(timeBuffer, call LocalTime.get());
       call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, EMPTY_DEST, 1, PROTOCOL_NDISCOVERY, timeBuffer, PACKET_HEADER_LENGTH + sizeof(uint32_t));
 
-      call Sender.send(*sendPackage, PACKET_BLAST);
+      call Sender.send(*sendPackage, PACKET_BLAST, 0);
       return SUCCESS;
    }
    command error_t Neighbors.recieveSend(pack* sendPackage, pack* msg){
@@ -76,7 +76,7 @@ implementation{
       //Double check length impl. Length is stupid.
       call PacketTools.makePackNew(sendPackage, TOS_NODE_ID, msg->src, 1, PROTOCOL_NDISCOVERYREPLY, timeBuffer, CMD_PACKET_HEADER_LENGTH + sizeof(i));
 
-      call Sender.send(*sendPackage, msg->src);
+      call Sender.send(*sendPackage, msg->src, 0);
       return SUCCESS;
    }
    //include sendPackage in the header even though we are not using it for consitancy since this method needs to be called from elsewhere

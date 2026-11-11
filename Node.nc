@@ -108,7 +108,7 @@ implementation{
                      dbg(ROUTING_CHANNEL, "No route to destination %d\n", sendPackage.dest);
                      return msg;
                   }
-                  call Sender.send(sendPackage, tempRoute.bestRoute);
+                  call Sender.send(sendPackage, tempRoute.bestRoute, 0);
                }
                else if (myMsg->dest != TOS_NODE_ID){
                   tempRoute = call Routing.getRoute(myMsg->dest);
@@ -117,7 +117,7 @@ implementation{
                      return msg;
                   }
                   dbg(ROUTING_CHANNEL, "Forwarding Ping from %d to %d via %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute);
-                  call Sender.send(*myMsg, tempRoute.bestRoute);
+                  call Sender.send(*myMsg, tempRoute.bestRoute, 1);
                } 
                break;
             case PROTOCOL_PINGREPLY:
@@ -131,7 +131,7 @@ implementation{
                      return msg;
                   }
                   dbg(ROUTING_CHANNEL, "Forwarding Ping Reply from %d to %d via %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute);
-                  call Sender.send(*myMsg, tempRoute.bestRoute);
+                  call Sender.send(*myMsg, tempRoute.bestRoute, 1);
                } 
                break;
             default:
@@ -155,7 +155,7 @@ implementation{
       i = tempRoute.bestRoute;
       call PacketTools.makePackNew(&sendPackage, TOS_NODE_ID, destination, 16, 0, payload, PACKET_MAX_PAYLOAD_SIZE);
       dbg(GENERAL_CHANNEL, "Sending Ping from %d to %d via %d\n", TOS_NODE_ID, destination, i);
-      call Sender.send(sendPackage, i);
+      call Sender.send(sendPackage, i, 0);
    }
 
    //TODO: use awfulTextManipulation variable and convert to int because this is NOT legible right now
