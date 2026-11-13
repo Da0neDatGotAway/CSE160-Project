@@ -8,6 +8,10 @@ enum{
     SOCKET_BUFFER_SIZE = 128,
 };
 
+enum flag{
+    SYN = 1
+}
+
 enum socket_state{
     CLOSED,
     LISTEN,
@@ -45,7 +49,7 @@ typedef struct socket_store_t{
 
     // This is the receiver portion
     uint8_t rcvdBuff[SOCKET_BUFFER_SIZE];
-    uint8_t lastRead;
+    uint8_t maxRead;
     uint8_t lastRcvd;
     uint8_t nextExpected;
 
