@@ -33,6 +33,7 @@ implementation {
 
     components new TimerMilliC();
     Node.LoopTimer -> TimerMilliC;
+    Node.TCPTimer -> TimerMilliC;
 
     components StringToolsC;
     Node.StringTools -> StringToolsC;
@@ -53,4 +54,7 @@ implementation {
     Node.DistanceVector -> DistanceVectorC;
     DistanceVectorC.Neighbors -> NeighborsC;
     DistanceVectorC.Routing -> RoutingC;
+
+    components TransportC;
+    Node.Transport -> TransportC;
 }

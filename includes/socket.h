@@ -6,11 +6,13 @@ enum{
     ROOT_SOCKET_ADDR = 255,
     ROOT_SOCKET_PORT = 255,
     SOCKET_BUFFER_SIZE = 128,
+    SOCKET_RESEND = 1000000,
 };
 
 enum flag{
-    SYN = 1
-}
+    SYN = 1,
+    SYN_ACK = 2,
+};
 
 enum socket_state{
     CLOSED,
@@ -53,7 +55,7 @@ typedef struct socket_store_t{
     uint8_t lastRcvd;
     uint8_t nextExpected;
 
-    uint16_t RTT;
+    uint32_t lastRecievedTime;
     uint8_t effectiveWindow;
 }socket_store_t;
 

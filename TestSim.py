@@ -4,6 +4,7 @@
 #$LastChangedDate: 2014-08-31 16:06:26 -0700 (Sun, 31 Aug 2014) $
 #! /usr/bin/python
 import sys
+
 from TOSSIM import *
 from CommandMsg import *
 
@@ -13,6 +14,7 @@ class TestSim:
     CMD_PING = 0
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP=3
+    CMD_APP_CLIENT=10
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -30,6 +32,7 @@ class TestSim:
 
     # Personal Debuggin Channels for some of the additional models implemented.
     HASHMAP_CHANNEL="hashmap";
+
 
     # Initialize Vars
     numMote=0
@@ -128,6 +131,10 @@ class TestSim:
     def addChannel(self, channelName, out=sys.stdout):
         print 'Adding Channel', channelName;
         self.t.addChannel(channelName, out);
+    
+    def connectClient(self, source, destination, port):
+        print( "Running command")
+        return self.sendCMD(self.CMD_APP_CLIENT, source, "{0}{1}".format(chr(destination),chr(port)));
 
 def main():
     s = TestSim();

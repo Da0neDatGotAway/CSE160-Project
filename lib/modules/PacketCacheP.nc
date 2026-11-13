@@ -44,6 +44,9 @@ implementation {
 
   command uint16_t PacketCache.getAndIncrement(uint8_t protocol) {
     seqNum[protocol] = seqNum[protocol] + 1;
+    /*if (protocol==4){
+      dbg(ROUTING_CHANNEL, "PacketCache: Incrementing seqNum for protocol %d to %d\n", protocol, seqNum[protocol]);
+    }*/
     return seqNum[protocol]-1;
   }
 }

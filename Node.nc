@@ -13,6 +13,7 @@
 #include "includes/sendInfo.h"
 #include "includes/channels.h"
 #include "includes/routing.h"
+#include "includes/socket.h"
 
 module Node{
    uses interface Boot;
@@ -25,18 +26,22 @@ module Node{
    uses interface CommandHandler;
 
    uses interface Timer<TMilli> as LoopTimer;
+   uses interface Timer<TMilli> as TCPTimer;
    uses interface StringTools;
    uses interface PacketTools;
    uses interface Neighbors;
    uses interface PacketCache;
    uses interface Routing;
    uses interface DistanceVector;
+   uses interface Transport;
 }
 
 implementation{
    pack sendPackage;
    uint32_t i = 0;
    void* tempPointer;
+   socket_addr_t tempSocket;
+   
    //we need to do this because we can't print dbg on multiple lines since it come pre-packed with all the log data. Honestly because of that it should auto newline. Seems like a jank logging function honestly
    char strBuf[300];
 
@@ -63,6 +68,7 @@ implementation{
 
          discoverNeighbors();
          call LoopTimer.startPeriodic(500);
+         call TCPTimer.startPeriodic(100);
       }else{
          //Retry until successful
          call AMControl.start();
@@ -134,6 +140,21 @@ implementation{
                   call Sender.send(*myMsg, tempRoute.bestRoute, 1);
                } 
                break;
+            case PROTOCOL_TCP:
+               if (myMsg->dest == TOS_NODE_ID){
+                  dbg(GENERAL_CHANNEL, "Packet Recieved from %d with data %s and sequence number %d \n", myMsg->src, myMsg->payload, myMsg->seq);
+                  call Transport.receive(myMsg);
+               }
+               else if (myMsg->dest != TOS_NODE_ID){
+                  tempRoute = call Routing.getRoute(myMsg->dest);
+                  if(tempRoute.bestRoute == 0){
+                     dbg(ROUTING_CHANNEL, "No route to destination %d\n", myMsg->dest);
+                     return msg;
+                  }
+                  dbg(ROUTING_CHANNEL, "Forwarding TCP packet from %d to %d via %d, sequence number %d\n", myMsg->src, myMsg->dest, tempRoute.bestRoute, myMsg->seq);
+                  call Sender.send(*myMsg, tempRoute.bestRoute, 1);
+               }
+               break;
             default:
                dbg(GENERAL_CHANNEL, "Unknown Protocol %d\n", myMsg->protocol);
          }
@@ -188,6 +209,15 @@ implementation{
       }
    }
 
+   event uint8_t CommandHandler.connectClient(uint8_t destination, uint8_t port){
+      tempSocket.addr = destination;
+      tempSocket.port = port;
+      dbg(COMMAND_CHANNEL, "Connecting to %d \n", destination);
+      i = call Transport.socket();
+      call Transport.connect((uint8_t)i, &tempSocket);
+      return (uint8_t)i;
+   }
+
    event void CommandHandler.printLinkState(){}
 
    event void CommandHandler.printDistanceVector(){}
@@ -205,5 +235,9 @@ implementation{
    event void LoopTimer.fired() {
         discoverNeighbors();
         call DistanceVector.sendRoutes(&sendPackage);
+   }
+
+   event void TCPTimer.fired() {
+      call Transport.tick();
    }
 }
