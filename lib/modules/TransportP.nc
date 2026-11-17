@@ -34,6 +34,15 @@ implementation{
       return returnValue - sockets[fd].lastAck;
    }
 
+   short isSeqNew(socket_t fd, uint8_t seq){
+      short returnValue = seq;
+      if(sockets[fd].lastByteRcvd > 200 && seq < 100){
+         returnValue += 200;
+         return returnValue - sockets[fd].lastByteRcvd;
+      }
+      return returnValue - sockets[fd].lastByteRcvd;
+   }
+
    //ack or seq of 0 is a bug. That means none for us.
    error_t sendTCP(socket_port_t src, socket_addr_t* dest, uint8_t flag, uint8_t seq, uint8_t recieve_window, uint8_t ack, uint8_t* data, uint8_t data_len){
       bestRouteToNeighbor tempRoute;
@@ -61,6 +70,7 @@ implementation{
    }
 
    error_t sendTCPData(socket_t fd, uint8_t seq, uint8_t* data, uint8_t data_len){
+      dbg(TRANSPORT_CHANNEL, "sending data with seq %d to %d from port %d", seq, (uint8_t)(sockets[fd].dest.addr), fd);
       return sendTCP(fd, &(sockets[fd].dest), DATA, seq, SOCKET_BUFFER_SIZE - sockets[fd].maxRead, sockets[fd].lastByteRcvd, data, data_len);
    }
 
@@ -184,15 +194,40 @@ implementation{
             l = package->payload[1];
             signedI = isAckNew(l, package->payload[5]);
             if(signedI > 0){
+               //Finish the handshake
+               if(sockets[l].state == SYN_RCVD){
+                  sockets[l].state = ESTABLISHED;
+                  dbg(TRANSPORT_CHANNEL, "State changed from SYN_RCVD to ESTABLISHED communicating with %d on port %d", package->src, package->payload[0]);
+               }
                sockets[l].lastAck = package->payload[5];
                shrinkList((uint8_t)signedI, (uint8_t*)(&(sockets[l].sendBuff[0])), SOCKET_BUFFER_SIZE);
             }else{
                dbg(TRANSPORT_CHANNEL, "Received out of date ACK %d from %d on port %d\n", package->payload[5], package->src, package->payload[0]);
             }
-            /*getSeqNum
-            if(){
+            signedI = isSeqNew(l, package->payload[3]);
+            if(signedI > 0){
+               //currently we just test if the payload is exactly the one that we want. We could do caching here if we cared instead
+               if(signedI == 1){
+                  j = SOCKET_BUFFER_SIZE - sockets[l].maxRead;
 
-            }*/
+                  if(package->payload[6] < j){
+                     j = i < package->payload[6];
+                  }
+
+                  for(i = 0; i < j; i++){
+                     sockets[l].rcvdBuff[sockets[l].maxRead] = package->payload[i+7];
+                     sockets[l].maxRead++;
+                  }
+
+                  //i is now the amount of bytes we were able to write
+                  sockets[l].lastByteRcvd += i;
+                  dbg(TRANSPORT_CHANNEL, "Byte seq num %d read from connection to %d on port %d, read buffer size: %d", package->payload[3], package->src, package->payload[0], sockets[l].maxRead);
+               }else{
+                  dbg(TRANSPORT_CHANNEL, "Received skipped SQN %d. Expected %d, from %d on port %d\n", package->payload[3], sockets[l].lastByteRcvd, package->src, package->payload[0]);
+               }
+            }else{
+               dbg(TRANSPORT_CHANNEL, "Received out of date SQN %d from %d on port %d\n", package->payload[3], package->src, package->payload[0]);
+            }
             break;
          default:
             dbg(TRANSPORT_CHANNEL, "Received unknown TCP flag %d from %d on port %d\n", package->payload[2], package->src, package->payload[0]);
@@ -312,12 +347,12 @@ implementation{
             //loop all data we are able to send (that is our window)
             for(j = 0; j < k; j++){
                if(j%13 == 12){
-                  sendTCPData(i, sockets[i].lastAck + 1 + j, (uint8_t*)(&(sockets[i].sendBuff[l])), l);
+                  sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), 13);
                   l+=13;
                }
             }
             if(j != 0){
-               sendTCPData(i, sockets[i].lastAck + 1 + j, (uint8_t*)(&(sockets[i].sendBuff[l])), j);
+               sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), (j%13)+1);
             }
          }
       }
