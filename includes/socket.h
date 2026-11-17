@@ -6,12 +6,14 @@ enum{
     ROOT_SOCKET_ADDR = 255,
     ROOT_SOCKET_PORT = 255,
     SOCKET_BUFFER_SIZE = 128,
-    SOCKET_RESEND = 1000000,
+    SOCKET_RESEND = 10000,
+    DATA_SIZE = 13,
 };
 
 enum flag{
     SYN = 1,
     SYN_ACK = 2,
+    DATA = 3,
 };
 
 enum socket_state{
@@ -48,6 +50,7 @@ typedef struct socket_store_t{
     uint8_t lastWritten;
     uint8_t lastAck;
     uint8_t lastSent;
+    uint8_t recieveWindow;
 
     // This is the receiver portion
     uint8_t rcvdBuff[SOCKET_BUFFER_SIZE];

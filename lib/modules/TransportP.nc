@@ -121,6 +121,10 @@ implementation{
    command uint16_t Transport.write(socket_t fd, uint8_t *buff, uint16_t bufflen){
       j = SOCKET_BUFFER_SIZE - sockets[fd].lastWritten;
 
+      if(bufflen < j){
+         j = i < bufflen;
+      }
+
       for(i = 0; i < j; i++){
          sockets[fd].sendBuff[sockets[fd].lastWritten] = buff[i];
          sockets[fd].lastWritten++;
