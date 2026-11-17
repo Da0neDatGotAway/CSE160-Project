@@ -11,6 +11,7 @@ implementation{
    uint32_t j = 0;
    uint32_t k = 0;
    uint32_t l = 0;
+   uint32_t m = 0;
    short signedI = 0;
    socket_store_t sockets[MAX_NUM_OF_SOCKETS];
    uint8_t *payload;
@@ -200,7 +201,9 @@ implementation{
                   dbg(TRANSPORT_CHANNEL, "State changed from SYN_RCVD to ESTABLISHED communicating with %d on port %d", package->src, package->payload[0]);
                }
                sockets[l].lastAck = package->payload[5];
+               sockets[l].lastByteRcvd-=(uint8_t)signedI;
                shrinkList((uint8_t)signedI, (uint8_t*)(&(sockets[l].sendBuff[0])), SOCKET_BUFFER_SIZE);
+               sockets[l].lastRecievedTime = call LocalTime.get();
             }else{
                dbg(TRANSPORT_CHANNEL, "Received out of date ACK %d from %d on port %d\n", package->payload[5], package->src, package->payload[0]);
             }
@@ -338,6 +341,11 @@ implementation{
             }
          }
          else if(sockets[i].state == ESTABLISHED){
+            m = sockets[i].lastSent;
+            if(sockets[i].lastRecievedTime > SOCKET_RESEND){
+               m = 0;
+               sockets[i].lastRecievedTime = call LocalTime.get();
+            }
             //setup loop
             k = sockets[i].recieveWindow;
             if(sockets[i].lastWritten < k){
@@ -345,14 +353,16 @@ implementation{
             }
             l = 0;
             //loop all data we are able to send (that is our window)
-            for(j = 0; j < k; j++){
+            for(j = m; j < k; j++){
                if(j%DATA_SIZE == DATA_SIZE-1){
                   sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), DATA_SIZE);
                   l+=DATA_SIZE;
+                  sockets[i].lastWritten+=DATA_SIZE;
                }
             }
             if(j != 0){
                sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), (j%DATA_SIZE)+1);
+               sockets[i].lastWritten+=(j%DATA_SIZE)+1;
             }
          }
       }

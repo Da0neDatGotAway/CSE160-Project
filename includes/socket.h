@@ -49,7 +49,7 @@ typedef struct socket_store_t{
     uint8_t sendBuff[SOCKET_BUFFER_SIZE];
     uint8_t lastWritten;
     uint8_t lastAck;
-    uint8_t byteOffset;
+    uint8_t lastSent;
     uint8_t recieveWindow;
 
     // This is the receiver portion
