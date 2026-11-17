@@ -9,6 +9,7 @@ module TransportP{
 implementation{
    uint32_t i = 0;
    uint32_t j = 0;
+   uint32_t k = 0;
    socket_store_t sockets[MAX_NUM_OF_SOCKETS];
    uint8_t *payload;
    socket_addr_t destAddr;
@@ -120,6 +121,9 @@ implementation{
     */
    command uint16_t Transport.write(socket_t fd, uint8_t *buff, uint16_t bufflen){
       j = SOCKET_BUFFER_SIZE - sockets[fd].lastWritten;
+      if(bufflen < j){
+         j = i < bufflen;
+      }
 
       for(i = 0; i < j; i++){
          sockets[fd].sendBuff[sockets[fd].lastWritten] = buff[i];
@@ -138,6 +142,8 @@ implementation{
     */
    command error_t Transport.receive(pack* package){
       dbg(TRANSPORT_CHANNEL, "Received TCP packet from %d\n with source port: %d and destination port: %d", package->src, package->payload[0], package->payload[1]);
+      //TODO: do reliability check before we even reached the switch statement. That way it also applies to the Syn and ack as they contain important data.
+      //^it may be best if we implement this as a method that can then be handled by the type for faster recovery, but obviously that could also get lost in the noise, so I think for not we ignore it
       switch(package->payload[2]){
          case SYN:
             dbg(TRANSPORT_CHANNEL, "Received SYN from %d on port %d\n", package->src, package->payload[0]);
@@ -157,6 +163,26 @@ implementation{
             i = package->payload[1];
             sockets[i].state = ESTABLISHED;
             sockets[i].dest.port = package->payload[0];
+            break;
+         case DATA:
+            dbg(TRANSPORT_CHANNEL, "Received data from %d on port %d\n", package->src, package->payload[0]);
+            //condition check right here to check if the packet has already been prcoessed
+            //hopefully this works
+            if(sockets[payload[1]] < ){
+               
+            }
+            //THINK mark youll outlast every fragile insignificant being on this planet
+            j = SOCKET_BUFFER_SIZE - sockets[payload[1]].maxRead;
+
+            if(j <= payload[6]){
+               return FAIL;
+            }
+
+            for(i = 0; i < j; i++){
+               sockets[payload[1]].rcvdBuff[sockets[payload[1]].maxRead] = payload[7+i];
+               sockets[payload[1]].maxRead++;
+            }
+            return SUCCESS;
             break;
          default:
             dbg(TRANSPORT_CHANNEL, "Received unknown TCP flag %d from %d on port %d\n", package->payload[2], package->src, package->payload[0]);
@@ -189,7 +215,7 @@ implementation{
          buff[i] = sockets[fd].rcvdBuff[sockets[fd].lastWritten];
       }
       shrinkList((uint16_t)i, sockets[fd].rcvdBuff, SOCKET_BUFFER_SIZE);
-      return j;
+      return (uint16_t)i;
    }
 
    /**

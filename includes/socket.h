@@ -12,6 +12,7 @@ enum{
 enum flag{
     SYN = 1,
     SYN_ACK = 2,
+    DATA = 3,
 };
 
 enum socket_state{
@@ -54,6 +55,8 @@ typedef struct socket_store_t{
     uint8_t maxRead;
     uint8_t lastRcvd;
     uint8_t nextExpected;
+    //This is a really stupid hack but I couldn't think of a better solution
+    
 
     uint32_t lastRecievedTime;
     uint8_t effectiveWindow;
