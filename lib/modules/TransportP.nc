@@ -346,13 +346,13 @@ implementation{
             l = 0;
             //loop all data we are able to send (that is our window)
             for(j = 0; j < k; j++){
-               if(j%13 == 12){
-                  sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), 13);
-                  l+=13;
+               if(j%DATA_SIZE == DATA_SIZE-1){
+                  sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), DATA_SIZE);
+                  l+=DATA_SIZE;
                }
             }
             if(j != 0){
-               sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), (j%13)+1);
+               sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), (j%DATA_SIZE)+1);
             }
          }
       }
