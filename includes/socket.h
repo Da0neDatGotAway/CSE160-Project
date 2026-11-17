@@ -49,13 +49,13 @@ typedef struct socket_store_t{
     uint8_t sendBuff[SOCKET_BUFFER_SIZE];
     uint8_t lastWritten;
     uint8_t lastAck;
-    uint8_t lastSent;
+    uint8_t byteOffset;
     uint8_t recieveWindow;
 
     // This is the receiver portion
     uint8_t rcvdBuff[SOCKET_BUFFER_SIZE];
     uint8_t maxRead;
-    uint8_t lastRcvd;
+    uint8_t lastByteRcvd;
     uint8_t nextExpected;
 
     uint32_t lastRecievedTime;

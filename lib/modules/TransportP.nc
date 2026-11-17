@@ -9,6 +9,9 @@ module TransportP{
 implementation{
    uint32_t i = 0;
    uint32_t j = 0;
+   uint32_t k = 0;
+   uint32_t l = 0;
+   short signedI = 0;
    socket_store_t sockets[MAX_NUM_OF_SOCKETS];
    uint8_t *payload;
    socket_addr_t destAddr;
@@ -20,6 +23,15 @@ implementation{
       for(i = 0; i < size-shrink; i++){
          array[i] = array[i+shrink];
       }
+   }
+
+   short isAckNew(socket_t fd, uint8_t ack){
+      short returnValue = ack;
+      if(sockets[fd].lastAck > 200 && ack < 100){
+         returnValue += 200;
+         return returnValue - sockets[fd].lastAck;
+      }
+      return returnValue - sockets[fd].lastAck;
    }
 
    //ack or seq of 0 is a bug. That means none for us.
@@ -46,6 +58,10 @@ implementation{
       dbg(TRANSPORT_CHANNEL, "Sending TCP packet to %d on port %d with source port %d\n", (uint8_t)(dest->addr), (uint8_t)(dest->port), src);
       call Sender.send(sendPack, i, 0);
       return SUCCESS;
+   }
+
+   error_t sendTCPData(socket_t fd, uint8_t seq, uint8_t* data, uint8_t data_len){
+      return sendTCP(fd, &(sockets[fd].dest), DATA, seq, SOCKET_BUFFER_SIZE - sockets[fd].maxRead, sockets[fd].lastByteRcvd, data, data_len);
    }
 
    /**
@@ -162,8 +178,25 @@ implementation{
             sockets[i].state = ESTABLISHED;
             sockets[i].dest.port = package->payload[0];
             break;
+         case DATA:
+            //We use l here because a bunch of functions use i as a temp variable :P
+            //This is because I am still not as familiar as I would like to be with nesC
+            l = package->payload[1];
+            signedI = isAckNew(l, package->payload[5]);
+            if(signedI > 0){
+               sockets[l].lastAck = package->payload[5];
+               shrinkList((uint8_t)signedI, (uint8_t*)(&(sockets[l].sendBuff[0])), SOCKET_BUFFER_SIZE);
+            }else{
+               dbg(TRANSPORT_CHANNEL, "Received out of date ACK %d from %d on port %d\n", package->payload[5], package->src, package->payload[0]);
+            }
+            /*getSeqNum
+            if(){
+
+            }*/
+            break;
          default:
             dbg(TRANSPORT_CHANNEL, "Received unknown TCP flag %d from %d on port %d\n", package->payload[2], package->src, package->payload[0]);
+            return FAIL;
             break;
          }
       return SUCCESS;
@@ -192,7 +225,7 @@ implementation{
       for(i = 0; i < j; i++){
          buff[i] = sockets[fd].rcvdBuff[sockets[fd].lastWritten];
       }
-      shrinkList((uint16_t)i, sockets[fd].rcvdBuff, SOCKET_BUFFER_SIZE);
+      shrinkList((uint16_t)i, (uint8_t*)(&(sockets[fd].rcvdBuff[0])), SOCKET_BUFFER_SIZE);
       return j;
    }
 
@@ -267,6 +300,24 @@ implementation{
                dbg(TRANSPORT_CHANNEL, "No response from %d on port %d, resending SYN\n", sockets[i].dest.addr, sockets[i].dest.port);
                sendTCP(i, &(sockets[i].dest), SYN, 1, SOCKET_BUFFER_SIZE, 0, (uint8_t*)&(sendPack.payload),0);
                sockets[i].lastRecievedTime = call LocalTime.get();
+            }
+         }
+         else if(sockets[i].state == ESTABLISHED){
+            //setup loop
+            k = sockets[i].recieveWindow;
+            if(sockets[i].lastWritten < k){
+               k = sockets[i].lastWritten;
+            }
+            l = 0;
+            //loop all data we are able to send (that is our window)
+            for(j = 0; j < k; j++){
+               if(j%13 == 12){
+                  sendTCPData(i, sockets[i].lastAck + 1 + j, (uint8_t*)(&(sockets[i].sendBuff[l])), l);
+                  l+=13;
+               }
+            }
+            if(j != 0){
+               sendTCPData(i, sockets[i].lastAck + 1 + j, (uint8_t*)(&(sockets[i].sendBuff[l])), j);
             }
          }
       }
