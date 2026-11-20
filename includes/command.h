@@ -19,7 +19,7 @@ enum{
 	CMD_KILL=6,
 	CMD_ERROR=9,
 	CMD_APP_CLIENT=10,
-	CMD_SEND_TCP=11
+	CMD_WRITE=11
 };
 
 enum{

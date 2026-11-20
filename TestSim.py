@@ -15,6 +15,7 @@ class TestSim:
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP=3
     CMD_APP_CLIENT=10
+    CMD_WRITE=11
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -129,12 +130,16 @@ class TestSim:
         self.sendCMD(self.CMD_ROUTE_DUMP, destination, "routing command");
 
     def addChannel(self, channelName, out=sys.stdout):
-        print 'Adding Channel', channelName;
+        print('Adding Channel', channelName);
         self.t.addChannel(channelName, out);
     
     def connectClient(self, source, destination, port):
         print( "Running command")
         return self.sendCMD(self.CMD_APP_CLIENT, source, "{0}{1}".format(chr(destination),chr(port)));
+
+    def sendTCP(self, source, socket, payload, length):
+        print("Sending TCP packet on socket %d with data %s\n" % (socket, payload))
+        self.sendCMD(self.CMD_WRITE, source, "{0}{1}{2}".format(chr(socket),payload,chr(length)));
 
 def main():
     s = TestSim();

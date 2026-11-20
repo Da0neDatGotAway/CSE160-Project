@@ -19,7 +19,7 @@ def main():
     # Add the main channels. These channels are declared in includes/channels.h
     s.addChannel(s.COMMAND_CHANNEL);
     s.addChannel(s.GENERAL_CHANNEL);
-    s.addChannel(s.ROUTING_CHANNEL);
+    #s.addChannel(s.ROUTING_CHANNEL);
     s.addChannel(s.TRANSPORT_CHANNEL);
     #s.addChannel(s.NEIGHBOR_CHANNEL);
 
@@ -30,7 +30,9 @@ def main():
     s.runTime(1);
     print("AM I STUPID?")
     port = s.connectClient(1, 9, 1);  
-    print(port)
+    s.runTime(250);
+    #print(port)
+    s.sendTCP(1, 0, "Hello World!", 13);
     s.runTime(200);
 
 if __name__ == '__main__':

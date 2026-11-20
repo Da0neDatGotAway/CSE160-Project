@@ -10,5 +10,5 @@ interface CommandHandler{
    event void setAppServer();
    event void setAppClient();
    event uint8_t connectClient(uint8_t destination, uint8_t port);
-   event void sendTCP(uint8_t socket, uint8_t *payload, uint8_t length);
+   event void sendTCP(uint8_t socket, uint8_t *payload, uint16_t length);
 }

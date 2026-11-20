@@ -142,7 +142,7 @@ implementation{
                break;
             case PROTOCOL_TCP:
                if (myMsg->dest == TOS_NODE_ID){
-                  dbg(GENERAL_CHANNEL, "Packet Recieved from %d with data %s and sequence number %d \n", myMsg->src, myMsg->payload, myMsg->seq);
+                  //dbg(GENERAL_CHANNEL, "Packet Recieved from %d with data %s and sequence number %d \n", myMsg->src, myMsg->payload, myMsg->seq);
                   call Transport.receive(myMsg);
                }
                else if (myMsg->dest != TOS_NODE_ID){
@@ -218,8 +218,9 @@ implementation{
       return (uint8_t)i;
    }
 
-   event void CommandHandler.sendTCP(uint8_t socket, uint8_t *payload, uint8_t length){
+   event void CommandHandler.sendTCP(uint8_t socket, uint8_t *payload, uint16_t length){
       dbg(COMMAND_CHANNEL, "Sending TCP packet on socket %d with data %s\n", socket, payload);
+      call Transport.write(socket, payload, length);
    }
 
    event void CommandHandler.printLinkState(){}
