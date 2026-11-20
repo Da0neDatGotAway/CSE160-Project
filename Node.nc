@@ -218,6 +218,10 @@ implementation{
       return (uint8_t)i;
    }
 
+   event void CommandHandler.sendTCP(uint8_t socket, uint8_t *payload, uint8_t length){
+      dbg(COMMAND_CHANNEL, "Sending TCP packet on socket %d with data %s\n", socket, payload);
+   }
+   
    event void CommandHandler.printLinkState(){}
 
    event void CommandHandler.printDistanceVector(){}
