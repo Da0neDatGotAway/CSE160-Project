@@ -87,6 +87,11 @@ implementation {
         signal CommandHandler.sendTCP(buff[0], &buff[2], buff[1]);
         break;
 
+      case CMD_CLOSE:
+        dbg(COMMAND_CHANNEL, "Command Type: TCP Close\n");
+        signal CommandHandler.closeTCP(buff[0]);
+        break;
+
       default:
         dbg(COMMAND_CHANNEL,
             "CMD_ERROR: \"%d\" does not match any known commands.\n", msg->id);

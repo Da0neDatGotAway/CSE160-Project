@@ -223,6 +223,11 @@ implementation{
       call Transport.write(socket, payload, length);
    }
 
+   event void CommandHandler.closeTCP(uint8_t socket){
+      dbg(COMMAND_CHANNEL, "Closing local TCP socket: %d\n", socket);
+      call Transport.close(socket);
+   }
+
    event void CommandHandler.printLinkState(){}
 
    event void CommandHandler.printDistanceVector(){}

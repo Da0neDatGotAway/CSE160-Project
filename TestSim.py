@@ -16,6 +16,7 @@ class TestSim:
     CMD_ROUTE_DUMP=3
     CMD_APP_CLIENT=10
     CMD_WRITE=11
+    CMD_CLOSE=12
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -144,6 +145,9 @@ class TestSim:
             source,
             "{0}{1}{2}".format(chr(socket), chr(length), payload)
         )
+
+    def closeTCP(self, source, socket):
+        self.sendCMD(self.CMD_CLOSE,source,"{0}".format(chr(socket)))
 
 def main():
     s = TestSim();

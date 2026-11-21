@@ -34,6 +34,8 @@ def main():
     #print(port)
     s.sendTCP(1, 0, "Hello World!", 13);
     s.runTime(200);
+    s.closeTCP(1, 0)
+    s.runTime(100);
 
 if __name__ == '__main__':
     main()
