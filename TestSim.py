@@ -139,7 +139,11 @@ class TestSim:
 
     def sendTCP(self, source, socket, payload, length):
         print("Sending TCP packet on socket %d with data %s\n" % (socket, payload))
-        self.sendCMD(self.CMD_WRITE, source, "{0}{1}{2}".format(chr(socket),payload,chr(length)));
+        self.sendCMD(
+            self.CMD_WRITE,
+            source,
+            "{0}{1}{2}".format(chr(socket), chr(length), payload)
+        )
 
 def main():
     s = TestSim();

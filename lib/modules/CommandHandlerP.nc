@@ -84,7 +84,7 @@ implementation {
         break;
       case CMD_WRITE:
         dbg(COMMAND_CHANNEL, "Command Type: TCP Write\n");
-        signal CommandHandler.sendTCP(buff[0], &buff[1], buff[2]);
+        signal CommandHandler.sendTCP(buff[0], &buff[2], buff[1]);
         break;
 
       default:

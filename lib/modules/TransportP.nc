@@ -12,6 +12,7 @@ implementation{
    uint32_t k = 0;
    uint32_t l = 0;
    uint32_t m = 0;
+   
    short signedI = 0;
    socket_store_t sockets[MAX_NUM_OF_SOCKETS];
    uint8_t *payload;
@@ -170,6 +171,7 @@ implementation{
          sockets[fd].lastWritten++;
       }
       dbg(TRANSPORT_CHANNEL, "Wrote %d bytes to socket %d, last written: %d\n", j, fd, sockets[fd].lastWritten);
+      dbg(TRANSPORT_CHANNEL, "write: asked %d, wrote %d, lastWritten now %d\n", bufflen, j, sockets[fd].lastWritten);
       return i;
    }
 
@@ -183,7 +185,7 @@ implementation{
     */
    command error_t Transport.receive(pack* package){
       sockets[package->payload[1]].recieveWindow = package->payload[4];
-      dbg(TRANSPORT_CHANNEL, "Received TCP packet from %d with port: %d and dest: %d and seq: %d\n", package->src, package->payload[0], package->payload[1], package->payload[3]);
+      //dbg(TRANSPORT_CHANNEL, "Received TCP packet from %d with port: %d and dest: %d and seq: %d\n", package->src, package->payload[0], package->payload[1], package->payload[3]);
       //dbg(TRANSPORT_CHANNEL, "Current Receive Window: %d\n", sockets[package->payload[1]].recieveWindow);
       switch(package->payload[2]){
          case SYN:
@@ -205,6 +207,7 @@ implementation{
             sockets[i].state = ESTABLISHED;
             sockets[i].dest.port = package->payload[0];
             break;
+         //case ACK:
          case DATA:
             //We use l here because a bunch of functions use i as a temp variable :P
             //This is because I am still not as familiar as I would like to be with nesC
@@ -221,11 +224,12 @@ implementation{
                sockets[l].lastByteRcvd-=(uint8_t)signedI;
                shrinkList((uint8_t)signedI, (uint8_t*)(&(sockets[l].sendBuff[0])), SOCKET_BUFFER_SIZE);
                sockets[l].lastRecievedTime = call LocalTime.get();
+               dbg(TRANSPORT_CHANNEL, "Received ACK %d from %d on port %d, lastAck now %d\n", package->payload[5], package->src, package->payload[0], sockets[l].lastAck);
             }else{
                //dbg(TRANSPORT_CHANNEL, "Received out of date ACK %d from %d on port %d\n", package->payload[5], package->src, package->payload[0]);
             }
             signedI = isSeqNew(l, package->payload[3]);
-            if(signedI > 0){
+            if(signedI > 0 && package->payload[6] != 0){
                //currently we just test if the payload is exactly the one that we want. We could do caching here if we cared instead
                if(signedI == 1){
                   j = SOCKET_BUFFER_SIZE - sockets[l].maxRead;
@@ -233,12 +237,16 @@ implementation{
                   if(package->payload[6] < j){
                      j = package->payload[6];
                   }
+                  if(sockets[l].state == SYN_RCVD){
+                     sockets[l].state = ESTABLISHED;
+                     dbg(TRANSPORT_CHANNEL, "State changed from SYN_RCVD to ESTABLISHED communicating with %d on port %d\n", package->src, package->payload[0]);
+                  }
 
                   for(i = 0; i < j; i++){
                      sockets[l].rcvdBuff[sockets[l].maxRead] = package->payload[i+7];
                      sockets[l].maxRead++;
-                     dbg(TRANSPORT_CHANNEL, "Max read buffer size for connection to %d on port %d is now %d\n", package->src, package->payload[0], sockets[l].maxRead);
                   }
+                  dbg(TRANSPORT_CHANNEL, "Got %d bytes (seq %d), maxRead now %d\n", j, package->payload[3], sockets[l].maxRead);
 
                   //i is now the amount of bytes we were able to write
                   sockets[l].lastByteRcvd += i;
@@ -358,8 +366,7 @@ implementation{
                sockets[i].lastRecievedTime = call LocalTime.get();
             }
          }
-         else if(sockets[i].state == ESTABLISHED){
-            m = sockets[i].lastSent;
+         else if(sockets[i].state == ESTABLISHED){m = sockets[i].lastSent;
             j = call LocalTime.get();
             if(j - sockets[i].lastRecievedTime > SOCKET_RESEND){
                m = 0;
@@ -381,9 +388,12 @@ implementation{
                }
             }
             if(j != 0 && j%DATA_SIZE != DATA_SIZE-1){
-               dbg(TRANSPORT_CHANNEL, "Sending last data packet with length %d\n", (j%DATA_SIZE)+1);
+               //dbg(TRANSPORT_CHANNEL, "Sending last data packet with length %d\n", (j%DATA_SIZE)+1);
                sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), (j%DATA_SIZE)+1);
                sockets[i].lastSent+=(j%DATA_SIZE)+1;
+            } if(j == 0){
+               //dbg(TRANSPORT_CHANNEL, "No data to send on socket %d\ sending ACK\n", i);
+               //sendTCPData(i, sockets[i].lastAck+1+l, (uint8_t*)(&(sockets[i].sendBuff[l])), 0);
             }
          }
       }
