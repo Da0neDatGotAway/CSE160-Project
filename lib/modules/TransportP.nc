@@ -84,7 +84,7 @@ implementation{
    }
 
    error_t sendTCPData(socket_t fd, uint8_t seq, uint8_t* data, uint8_t data_len){
-      //dbg(TRANSPORT_CHANNEL, "sending data with seq %d to %d from port %d\n", seq, sockets[fd].dest.addr, sockets[fd].dest.port);
+      //dbg(TRANSPORT_CHANNEL, "sending data with seq %d and ack %d\n", seq, sockets[fd].lastAck);
       return sendTCP(fd, &(sockets[fd].dest), DATA, seq, SOCKET_BUFFER_SIZE - sockets[fd].maxRead, sockets[fd].lastByteRcvd, data, data_len);
    }
 
@@ -221,11 +221,10 @@ implementation{
                   dbg(TRANSPORT_CHANNEL, "State changed from SYN_RCVD to ESTABLISHED communicating with %d on port %d", package->src, package->payload[0]);
                }
                sockets[l].lastAck = package->payload[5];
-               sockets[l].lastByteRcvd-=(uint8_t)signedI;
+               sockets[l].lastWritten-=(uint8_t)signedI;
                shrinkList((uint8_t)signedI, (uint8_t*)(&(sockets[l].sendBuff[0])), SOCKET_BUFFER_SIZE);
                sockets[l].lastRecievedTime = call LocalTime.get();
-               dbg(TRANSPORT_CHANNEL, "Received ACK %d from %d on port %d, lastAck now %d\n", package->payload[5], package->src, package->payload[0], sockets[l].lastAck);
-            }else{
+               dbg(TRANSPORT_CHANNEL, "Received ACK %d from %d on port %d, seq %d\n", package->payload[5], package->src, package->payload[0], package->payload[3]);
                //dbg(TRANSPORT_CHANNEL, "Received out of date ACK %d from %d on port %d\n", package->payload[5], package->src, package->payload[0]);
             }
             signedI = isSeqNew(l, package->payload[3]);
@@ -366,7 +365,8 @@ implementation{
                sockets[i].lastRecievedTime = call LocalTime.get();
             }
          }
-         else if(sockets[i].state == ESTABLISHED){m = sockets[i].lastSent;
+         else if(sockets[i].state == ESTABLISHED){
+            m = sockets[i].lastSent;
             j = call LocalTime.get();
             if(j - sockets[i].lastRecievedTime > SOCKET_RESEND){
                m = 0;
@@ -386,14 +386,16 @@ implementation{
                   l+=DATA_SIZE;
                   sockets[i].lastSent+=DATA_SIZE;
                }
-            }
-            if(j != 0 && j%DATA_SIZE != DATA_SIZE-1){
-               //dbg(TRANSPORT_CHANNEL, "Sending last data packet with length %d\n", (j%DATA_SIZE)+1);
-               sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), (j%DATA_SIZE)+1);
-               sockets[i].lastSent+=(j%DATA_SIZE)+1;
+            } //greater than
+            if(j != m && k - l > 0){
+               //dbg(TRANSPORT_CHANNEL, "k-l is %d, sending last data packet with data %s\n", k-l, (uint8_t*)(&(sockets[i].sendBuff[l])));
+               //dbg(TRANSPORT_CHANNEL, "Sending last data packet with data %s\n", (uint8_t*)(&(sockets[i].sendBuff[l])));
+               sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), k-l);
+               sockets[i].lastSent+=(k-l);
             } if(j == 0){
                //dbg(TRANSPORT_CHANNEL, "No data to send on socket %d\ sending ACK\n", i);
-               //sendTCPData(i, sockets[i].lastAck+1+l, (uint8_t*)(&(sockets[i].sendBuff[l])), 0);
+               sendTCPData(i, sockets[i].lastAck+1+l, (uint8_t*)(&(sockets[i].sendBuff[l])), 0);
+               //dbg(TRANSPORT_CHANNEL, "Sending ACK %d to %d with seq %d on port %d\n", sockets[i].lastAck, sockets[i].dest.addr, sockets[i].lastAck+1+l, sockets[i].dest.port);
             }
          }
       }
