@@ -244,7 +244,12 @@ implementation{
       for (i = 0; i < BUFFER_SIZE; i++){
          dataBuf[i] = ((uint8_t*)tempPointer)[i];
       }
-      dbg(GENERAL_CHANNEL, "Data on socket %d: %s\n", socket, dataBuf);
+      dbg(GENERAL_CHANNEL, "Data: ");
+      for (i = 0; i < BUFFER_SIZE; i++) {
+         // Use %d or %02x if dataBuf holds raw numbers/bytes instead of ASCII text
+         dbg_clear(GENERAL_CHANNEL, "%c", dataBuf[i]); 
+      }
+      dbg_clear(GENERAL_CHANNEL, "\n");
    }
 
    event void CommandHandler.printSocket(uint8_t socket){
