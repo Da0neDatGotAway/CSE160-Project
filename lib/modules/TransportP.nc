@@ -73,7 +73,7 @@ implementation{
 
       tempRoute = call Routing.getRoute((uint8_t)(dest->addr));
       if(tempRoute.bestRoute == 0){
-         dbg(TRANSPORT_CHANNEL, "No route to destination %d\n", (uint8_t)(dest->addr));
+         dbg(TRANSPORT_CHANNEL, "No route to destination %d, (port %d)\n", (uint8_t)(dest->addr),(uint8_t)(dest->port));
          return FAIL;
       }
       iTemp = tempRoute.bestRoute;
@@ -84,8 +84,21 @@ implementation{
    }
 
    error_t sendTCPData(socket_t fd, uint8_t seq, uint8_t* data, uint8_t data_len){
-      //dbg(TRANSPORT_CHANNEL, "sending data with seq %d and ack %d\n", seq, sockets[fd].lastAck);
+      dbg(TRANSPORT_DEBUG_CHANNEL, "sending data from port %d with seq %d and ack %d\n", fd, seq, sockets[fd].lastAck);
       return sendTCP(fd, &(sockets[fd].dest), DATA, seq, SOCKET_BUFFER_SIZE - sockets[fd].maxRead, sockets[fd].lastByteRcvd, data, data_len);
+   }
+
+   bool canSendClose(socket_t fd){
+      return (sockets[fd].closeState != NO_CLOSE && sockets[fd].lastWritten == 0);
+   }
+
+   //Handles sending the close once our write buffer is empty
+   void informClose(socket_t fd){
+      dbg(TRANSPORT_CHANNEL, "Buffer empty. Sending close packet\n");
+      sendTCP(fd, &(sockets[fd].dest), CLOSE, 0, SOCKET_BUFFER_SIZE - sockets[fd].maxRead, 0, (uint8_t*)&(sendPack.payload), 0);
+      if(sockets[fd].closeState == RECEIVE_CLOSE){
+         sockets[fd].closeState = AWAIT_CLOSE;
+      }
    }
 
    /**
@@ -159,6 +172,9 @@ implementation{
     *    from the pass buffer. This may be shorter then bufflen
     */
    command uint16_t Transport.write(socket_t fd, uint8_t *buff, uint16_t bufflen){
+      if(sockets[fd].closeState != NO_CLOSE){
+         return 0;
+      }
       j = SOCKET_BUFFER_SIZE - sockets[fd].lastWritten;
       dbg(TRANSPORT_CHANNEL, "Writing to socket %d with buffer length %d\n", fd, bufflen);
 
@@ -225,7 +241,14 @@ implementation{
                shrinkList((uint8_t)signedI, (uint8_t*)(&(sockets[l].sendBuff[0])), SOCKET_BUFFER_SIZE);
                sockets[l].lastRecievedTime = call LocalTime.get();
                dbg(TRANSPORT_CHANNEL, "Received ACK %d from %d on port %d, seq %d\n", package->payload[5], package->src, package->payload[0], package->payload[3]);
-               //dbg(TRANSPORT_CHANNEL, "Received out of date ACK %d from %d on port %d\n", package->payload[5], package->src, package->payload[0]);
+               
+               //Handles sending the close once our write buffer is empty
+               if(canSendClose(l)){
+                  informClose(l);
+               }
+            }
+            else{
+               dbg(TRANSPORT_DEBUG_CHANNEL, "Received out of date ACK %d from %d on port %d\n", package->payload[5], package->src, package->payload[0]);
             }
             signedI = isSeqNew(l, package->payload[3]);
             if(signedI > 0 && package->payload[6] != 0){
@@ -236,6 +259,8 @@ implementation{
                   if(package->payload[6] < j){
                      j = package->payload[6];
                   }
+
+                  dbg(TRANSPORT_CHANNEL, "SOCKET STATE: %d\n", sockets[l].state);
                   if(sockets[l].state == SYN_RCVD){
                      sockets[l].state = ESTABLISHED;
                      dbg(TRANSPORT_CHANNEL, "State changed from SYN_RCVD to ESTABLISHED communicating with %d on port %d\n", package->src, package->payload[0]);
@@ -249,12 +274,34 @@ implementation{
 
                   //i is now the amount of bytes we were able to write
                   sockets[l].lastByteRcvd += i;
+
+                  //Now we send an ack here if we don't have our own data to send (otherwise we use that)
+                  if(sockets[l].lastWritten == 0){
+                     sendTCPData(i, sockets[l].lastAck+1+l, (uint8_t*)&(payload[8]), 0);
+                  }
                   dbg(TRANSPORT_CHANNEL, "Byte seq num %d read from connection to %d on port %d, read buffer size: %d\n", package->payload[3], package->src, package->payload[0], sockets[l].maxRead);
                }else{
                   dbg(TRANSPORT_CHANNEL, "Received skipped SQN %d. Expected %d, from %d on port %d\n", package->payload[3], sockets[l].lastByteRcvd, package->src, package->payload[0]);
                }
             }else{
-               //dbg(TRANSPORT_CHANNEL, "Received out of date SQN %d from %d on port %d\n", package->payload[3], package->src, package->payload[0]);
+               dbg(TRANSPORT_DEBUG_CHANNEL, "Received out of date SQN %d from %d on port %d\n", package->payload[3], package->src, package->payload[0]);
+            }
+            break;
+         case CLOSE:
+            l = package->payload[1];
+            if(sockets[l].state == ESTABLISHED){
+               dbg(TRANSPORT_CHANNEL, "Sokcet %d recieved close\n", l);
+               if(sockets[l].closeState == LOCAL_CLOSE){
+                  sockets[l].closeState = AWAIT_CLOSE;
+               }else{
+                  if(sockets[l].closeState != AWAIT_CLOSE){
+                     sockets[l].closeState = RECEIVE_CLOSE;
+                  }
+                  sockets[l].lastRecievedTime = call LocalTime.get();
+                  if(canSendClose(l)){
+                     informClose(l);
+                  }
+               }
             }
             break;
          default:
@@ -326,7 +373,12 @@ implementation{
     *    a closure with the fd passed, else return FAIL.
     */
    command error_t Transport.close(socket_t fd) {
-      return FAIL;
+      sockets[fd].closeState = LOCAL_CLOSE;
+      if(canSendClose(fd)){
+         informClose(fd);
+      }
+      
+      return SUCCESS;
    }
 
    /**
@@ -339,7 +391,24 @@ implementation{
     *    a closure with the fd passed, else return FAIL.
     */
    command error_t Transport.release(socket_t fd){
-      return FAIL;
+      sockets[fd].flag = 0;
+      sockets[fd].state = CLOSED;
+      sockets[fd].dest.port = 0;
+      sockets[fd].dest.addr = 0;
+      //this is the line where we update the data in send buff if we cared about security. But we don't
+      sockets[fd].lastWritten = 0;
+      sockets[fd].lastAck = 0;
+      sockets[fd].lastSent = 0;
+      sockets[fd].maxRead = 0;
+      sockets[fd].lastByteRcvd = 0;
+      sockets[fd].recieveWindow = 0;
+      sockets[fd].lastRecievedTime = 0;
+
+      sockets[fd].closeState = 0;
+
+      dbg(TRANSPORT_CHANNEL, "Released socket %d\n", fd);
+
+      return SUCCESS;
    }
 
    /**
@@ -366,36 +435,50 @@ implementation{
             }
          }
          else if(sockets[i].state == ESTABLISHED){
-            m = sockets[i].lastSent;
-            j = call LocalTime.get();
-            if(j - sockets[i].lastRecievedTime > SOCKET_RESEND){
-               m = 0;
-               sockets[i].lastRecievedTime = j;
-            }
-            //setup loop
-            k = sockets[i].recieveWindow;
-            if(sockets[i].lastWritten < k){
-               //dbg(TRANSPORT_CHANNEL, "Recieve window is %d, last written is %d, socket %d\n", k, sockets[i].lastWritten, i);
-               k = sockets[i].lastWritten;
-            }
-            l = 0;
-            //loop all data we are able to send (that is our window)
-            for(j = m; j < k; j++){
-               if(j%DATA_SIZE == DATA_SIZE-1){
-                  sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), DATA_SIZE);
-                  l+=DATA_SIZE;
-                  sockets[i].lastSent+=DATA_SIZE;
+            if(canSendClose(i)) {
+               //Closing since we don't use sates because :(
+               j = call LocalTime.get();
+
+               if(sockets[i].closeState == AWAIT_CLOSE){
+                  if(j - sockets[i].lastRecievedTime > SOCKET_RESEND*4){
+                     call Transport.release(i);
+                  }
+               }else{
+                  if(j - sockets[i].lastRecievedTime > SOCKET_RESEND) {
+                     dbg(TRANSPORT_CHANNEL, "No response from %d on port %d, retrying CLOSE\n", sockets[i].dest.addr, sockets[i].dest.port);
+                     informClose(i);
+                     sockets[i].lastRecievedTime = j;
+                  }
                }
-            } //greater than
-            if(j != m && k - l > 0){
-               //dbg(TRANSPORT_CHANNEL, "k-l is %d, sending last data packet with data %s\n", k-l, (uint8_t*)(&(sockets[i].sendBuff[l])));
-               //dbg(TRANSPORT_CHANNEL, "Sending last data packet with data %s\n", (uint8_t*)(&(sockets[i].sendBuff[l])));
-               sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), k-l);
-               sockets[i].lastSent+=(k-l);
-            } if(j == 0){
-               //dbg(TRANSPORT_CHANNEL, "No data to send on socket %d\ sending ACK\n", i);
-               sendTCPData(i, sockets[i].lastAck+1+l, (uint8_t*)(&(sockets[i].sendBuff[l])), 0);
-               //dbg(TRANSPORT_CHANNEL, "Sending ACK %d to %d with seq %d on port %d\n", sockets[i].lastAck, sockets[i].dest.addr, sockets[i].lastAck+1+l, sockets[i].dest.port);
+            }
+            else {
+               m = sockets[i].lastSent;
+               j = call LocalTime.get();
+               if(j - sockets[i].lastRecievedTime > SOCKET_RESEND){
+                  m = 0;
+                  sockets[i].lastRecievedTime = j;
+               }
+               //setup loop
+               k = sockets[i].recieveWindow;
+               if(sockets[i].lastWritten < k){
+                  //dbg(TRANSPORT_CHANNEL, "Recieve window is %d, last written is %d, socket %d\n", k, sockets[i].lastWritten, i);
+                  k = sockets[i].lastWritten;
+               }
+               l = 0;
+               //loop all data we are able to send (that is our window)
+               for(j = m; j < k; j++){
+                  if(j%DATA_SIZE == DATA_SIZE-1){
+                     sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), DATA_SIZE);
+                     l+=DATA_SIZE;
+                     sockets[i].lastSent+=DATA_SIZE;
+                  }
+               } //greater than
+               if(j != m && k - l > 0){
+                  //dbg(TRANSPORT_CHANNEL, "k-l is %d, sending last data packet with data %s\n", k-l, (uint8_t*)(&(sockets[i].sendBuff[l])));
+                  //dbg(TRANSPORT_CHANNEL, "Sending last data packet with data %s\n", (uint8_t*)(&(sockets[i].sendBuff[l])));
+                  sendTCPData(i, sockets[i].lastAck + 1 + l, (uint8_t*)(&(sockets[i].sendBuff[l])), k-l);
+                  sockets[i].lastSent+=(k-l);
+               }
             }
          }
       }

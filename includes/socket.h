@@ -14,6 +14,7 @@ enum flag{
     SYN = 1,
     SYN_ACK = 2,
     DATA = 3,
+    CLOSE = 4,
 };
 
 enum socket_state{
@@ -22,6 +23,14 @@ enum socket_state{
     ESTABLISHED,
     SYN_SENT,
     SYN_RCVD,
+};
+
+enum close_state{
+    NO_CLOSE=0,
+    LOCAL_CLOSE=1,
+    RECEIVE_CLOSE=2,
+    //Waits to close the connection until some time has passed and will respond if messaged in that time
+    AWAIT_CLOSE=3,
 };
 
 
@@ -42,7 +51,6 @@ typedef uint8_t socket_t;
 typedef struct socket_store_t{
     uint8_t flag;
     enum socket_state state;
-    socket_port_t src;
     socket_addr_t dest;
 
     // This is the sender portion.
@@ -50,16 +58,17 @@ typedef struct socket_store_t{
     uint8_t lastWritten;
     uint8_t lastAck;
     uint8_t lastSent;
-    uint8_t recieveWindow;
 
     // This is the receiver portion
     uint8_t rcvdBuff[SOCKET_BUFFER_SIZE];
     uint8_t maxRead;
     uint8_t lastByteRcvd;
-    uint8_t nextExpected;
 
+    uint8_t recieveWindow;
     uint32_t lastRecievedTime;
-    uint8_t effectiveWindow;
+
+    //It would be cool if this was a socket_state, but since everything relies on established state and multi state isn't a thing this is the best we got for now
+    uint8_t closeState;
 }socket_store_t;
 
 #endif

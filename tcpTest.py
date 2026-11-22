@@ -32,10 +32,12 @@ def main():
     port = s.connectClient(1, 9, 1);  
     s.runTime(250);
     #print(port)
-    s.sendTCP(1, 0, "Hello World!", 13);
+    #s.sendTCP(1, 0, "Hello World!", 13);
+    s.sendTCP(9, 0, "Hello World!123456789", 22);
     s.runTime(200);
+
     s.closeTCP(1, 0)
-    s.runTime(100);
+    s.runTime(900);
 
 if __name__ == '__main__':
     main()
