@@ -17,24 +17,42 @@ implementation {
     }
 
     buffer[fd].socket = fd;
-    //dbg(GENERAL_CHANNEL, "Writing %d bytes to socket %d, bufferlen now %d\n", bufflen, fd, buffer[fd].bufferlen);
-    for (i = buffer[fd].bufferlen; i < bufflen; i++) {
-      buffer[fd].buffer[buffer[fd].buffpos + i] = buff[i];
+    if (buffer[fd].buffpos > 0) {
+      if (buffer[fd].buffpos < buffer[fd].bufferlen) {
+        for (i = 0; i < buffer[fd].bufferlen - buffer[fd].buffpos; i++) {
+          buffer[fd].buffer[i] = buffer[fd].buffer[buffer[fd].buffpos + i];
+        }
+        buffer[fd].bufferlen -= buffer[fd].buffpos;
+        buffer[fd].buffpos = 0;
+      }else{
+        buffer[fd].buffpos = 0;
+        buffer[fd].bufferlen = 0;
+      }
+    }
+    if (buffer[fd].bufferlen + bufflen > BUFFER_SIZE) {
+      return 0;
+    }
+    for (i = 0; i < bufflen; i++) {
+      buffer[fd].buffer[buffer[fd].bufferlen + i] = buff[i];
     }
     buffer[fd].bufferlen += bufflen;
 
-    return SUCCESS;
+    return bufflen;
   }
 
   command void InputBuffer.tick() {
     for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
         j = 0;
       if (buffer[i].bufferlen > 0 && buffer[i].buffpos < buffer[i].bufferlen) {
-        j=call Transport.write(buffer[i].socket, buffer[i].buffer, buffer[i].bufferlen);
+        j=call Transport.write(buffer[i].socket, &buffer[i].buffer[buffer[i].buffpos], buffer[i].bufferlen - buffer[i].buffpos);
         buffer[i].buffpos += j;
         if (j > 0) {
           dbg(GENERAL_CHANNEL, "Wrote %d bytes to socket %d, buffpos now %d\n", j, buffer[i].socket, buffer[i].buffpos);
         }
+      }
+      if (buffer[i].buffpos >= buffer[i].bufferlen) {
+        buffer[i].buffpos = 0;
+        buffer[i].bufferlen = 0;
       }
     }
   }

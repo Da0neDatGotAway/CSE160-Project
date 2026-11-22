@@ -57,11 +57,10 @@ def main():
     #this 2 runtime is needed or else the command does not get deliverd
     s.runTime(2);
     #s.sendTCP(9, 0, "aloha", 5);
-    s.runTime(2000);
+    s.runTime(1000);
     print("Reading from socket 0 on node 9")
     s.readTCP(9, 0);
     s.runTime(20);
-
     s.sendTCP(9, 0, "Goodbye my only friend", 22);
     s.runTime(2);
     s.closeTCP(1, 0)

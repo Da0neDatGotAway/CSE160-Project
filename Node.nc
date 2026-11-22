@@ -48,7 +48,7 @@ implementation{
    //we need to do this because we can't print dbg on multiple lines since it come pre-packed with all the log data. Honestly because of that it should auto newline. Seems like a jank logging function honestly
    char strBuf[300];
 
-   char dataBuf[BUFFER_SIZE];
+   char dataBuf[BUFFER_SIZE + 1];
 
    // Prototypes
    //void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -234,17 +234,27 @@ implementation{
    }
 
    event void CommandHandler.readTCP(uint8_t socket){
-      dbg(COMMAND_CHANNEL, "Reading TCP packet on socket %d\n", socket);
+      uint16_t dataLen;
+      dbg(GENERAL_CHANNEL, "Reading TCP packet on socket %d\n", socket);
       //print out the data
       tempPointer = call Consumer.read(socket);
       if (tempPointer == NULL){
          dbg(GENERAL_CHANNEL, "No data available on socket %d\n", socket);
          return;
       }
-      for (i = 0; i < BUFFER_SIZE; i++){
+      dataLen = call Consumer.length(socket);
+      if (dataLen > BUFFER_SIZE){
+         dataLen = BUFFER_SIZE;
+      }
+      for (i = 0; i < dataLen; i++){
          dataBuf[i] = ((uint8_t*)tempPointer)[i];
       }
-      dbg(GENERAL_CHANNEL, "Data on socket %d: %s\n", socket, dataBuf);
+      dataBuf[dataLen] = 0;
+      dbg(GENERAL_CHANNEL, "Data: ");
+      for (i = 0; i < dataLen; i++) {
+         dbg_clear(GENERAL_CHANNEL, "%c", dataBuf[i]); 
+      }
+      dbg_clear(GENERAL_CHANNEL, "\n");
    }
 
    event void CommandHandler.printSocket(uint8_t socket){
