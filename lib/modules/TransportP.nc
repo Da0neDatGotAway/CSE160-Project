@@ -230,9 +230,6 @@ implementation{
             l = package->payload[1];
             signedI = isAckNew(l, package->payload[5]);
             sockets[l].recieveWindow = package->payload[4];
-            if(TOS_NODE_ID == 1){
-               dbg(TRANSPORT_CHANNEL, "RecievedDataPacket\n");
-            }
             if(signedI > 0){
                //Finish the handshake
                if(sockets[l].state == SYN_RCVD){
