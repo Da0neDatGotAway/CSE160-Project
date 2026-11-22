@@ -228,6 +228,7 @@ implementation{
                destAddr.addr = package->src;
                destAddr.port = package->payload[0];
                call Transport.bind(i, &destAddr);
+
             
             sockets[i].state = SYN_RCVD;
             sendTCP((uint8_t)i, &(sockets[i].dest), SYN_ACK, 1, SOCKET_BUFFER_SIZE, 0, (uint8_t*)&(sendPack.payload),0);

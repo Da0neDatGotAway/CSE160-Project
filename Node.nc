@@ -246,6 +246,10 @@ implementation{
       if (dataLen > BUFFER_SIZE){
          dataLen = BUFFER_SIZE;
       }
+      if (dataLen == 0){
+         dbg(GENERAL_CHANNEL, "No data available on socket %d\n", socket);
+         return;
+      }
       for (i = 0; i < dataLen; i++){
          dataBuf[i] = ((uint8_t*)tempPointer)[i];
       }
