@@ -176,7 +176,7 @@ implementation{
          return 0;
       }
       j = SOCKET_BUFFER_SIZE - sockets[fd].lastWritten;
-      dbg(TRANSPORT_CHANNEL, "Writing to socket %d with buffer length %d\n", fd, bufflen);
+      //dbg(TRANSPORT_CHANNEL, "Writing to socket %d with buffer length %d\n", fd, bufflen);
 
       if(bufflen < j){
          j = bufflen;
@@ -186,8 +186,9 @@ implementation{
          sockets[fd].sendBuff[sockets[fd].lastWritten] = buff[i];
          sockets[fd].lastWritten++;
       }
-      dbg(TRANSPORT_CHANNEL, "Wrote %d bytes to socket %d, last written: %d\n", j, fd, sockets[fd].lastWritten);
-      dbg(TRANSPORT_CHANNEL, "write: asked %d, wrote %d, lastWritten now %d\n", bufflen, j, sockets[fd].lastWritten);
+      //dbg(GENERAL_CHANNEL, "write: asked %d, wrote %d, lastWritten now %d\n", bufflen, j, sockets[fd].lastWritten);
+      //dbg(TRANSPORT_CHANNEL, "Wrote %d bytes to socket %d, last written: %d\n", j, fd, sockets[fd].lastWritten);
+      //dbg(TRANSPORT_CHANNEL, "write: asked %d, wrote %d, lastWritten now %d\n", bufflen, j, sockets[fd].lastWritten);
       return i;
    }
 
@@ -270,18 +271,19 @@ implementation{
                      sockets[l].rcvdBuff[sockets[l].maxRead] = package->payload[i+7];
                      sockets[l].maxRead++;
                   }
-                  dbg(TRANSPORT_CHANNEL, "Got %d bytes (seq %d), maxRead now %d\n", j, package->payload[3], sockets[l].maxRead);
+                  dbg(GENERAL_CHANNEL, "Got %d bytes (seq %d), maxRead now %d, lastByteRcvd now %d\n", j, package->payload[3], sockets[l].maxRead, sockets[l].lastByteRcvd);
 
                   //i is now the amount of bytes we were able to write
-                  sockets[l].lastByteRcvd += i;
+                  sockets[l].lastByteRcvd += i;    
 
                   //Now we send an ack here if we don't have our own data to send (otherwise we use that)
                   if(sockets[l].lastWritten == 0){
+                     dbg(TRANSPORT_CHANNEL, "Sending ACK %d to %d on port %d\n", sockets[l].lastByteRcvd, package->src, package->payload[0]);
                      sendTCPData(l, sockets[l].lastAck+1+l, (uint8_t*)&(payload[8]), 0);
                   }
                   dbg(TRANSPORT_CHANNEL, "Byte seq num %d read from connection to %d on port %d, read buffer size: %d\n", package->payload[3], package->src, package->payload[0], sockets[l].maxRead);
                }else{
-                  dbg(TRANSPORT_CHANNEL, "Received skipped SQN %d. Expected %d, from %d on port %d\n", package->payload[3], sockets[l].lastByteRcvd, package->src, package->payload[0]);
+                  dbg(TRANSPORT_DEBUG_CHANNEL, "Received skipped SQN %d. Expected %d, from %d on port %d\n", package->payload[3], sockets[l].lastByteRcvd, package->src, package->payload[0]);
                }
             }else{
                dbg(TRANSPORT_DEBUG_CHANNEL, "Received out of date SQN %d from %d on port %d\n", package->payload[3], package->src, package->payload[0]);
@@ -333,9 +335,15 @@ implementation{
          j = sockets[fd].maxRead;
       }
       for(i = 0; i < j; i++){
-         buff[i] = sockets[fd].rcvdBuff[sockets[fd].lastWritten];
+         *(buff+i) = (sockets[fd].rcvdBuff[i]);
+         //dbg(GENERAL_CHANNEL, "Read Byte %d from socket %d\n", buff[i], fd);
       }
       shrinkList((uint16_t)i, (uint8_t*)(&(sockets[fd].rcvdBuff[0])), SOCKET_BUFFER_SIZE);
+      sockets[fd].maxRead -= (uint8_t)j;
+      if (j > 0){
+         dbg(TRANSPORT_DEBUG_CHANNEL, "Read %d bytes from socket %d, maxRead now %d, lastReceived now %d\n", j, fd, sockets[fd].maxRead, sockets[fd].lastByteRcvd);
+      }
+      
       return j;
    }
 
@@ -423,6 +431,10 @@ implementation{
    command error_t Transport.listen(socket_t fd){
       sockets[fd].state = LISTEN;
       return SUCCESS;
+   }
+
+   command void Transport.printSocket(socket_t fd){
+      dbg(GENERAL_CHANNEL, "Socket %d: dest port %d\n", fd, sockets[fd].dest.port);
    }
 
    command void Transport.tick(){

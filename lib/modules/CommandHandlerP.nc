@@ -92,6 +92,16 @@ implementation {
         signal CommandHandler.closeTCP(buff[0]);
         break;
 
+      case CMD_READ:
+        dbg(COMMAND_CHANNEL, "Command Type: TCP Read\n");
+        signal CommandHandler.readTCP(buff[0]);
+        break;
+        
+      case CMD_PRINT_SOCKET:
+        dbg(COMMAND_CHANNEL, "Command Type: Print Socket\n");
+        signal CommandHandler.printSocket(buff[0]);
+        break;
+
       default:
         dbg(COMMAND_CHANNEL,
             "CMD_ERROR: \"%d\" does not match any known commands.\n", msg->id);

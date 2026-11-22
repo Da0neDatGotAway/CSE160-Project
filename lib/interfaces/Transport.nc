@@ -146,4 +146,6 @@ interface Transport{
    command error_t listen(socket_t fd);
 
    command void tick();
+
+   command void printSocket(socket_t fd);
 }

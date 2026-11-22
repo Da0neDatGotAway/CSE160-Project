@@ -1,0 +1,9 @@
+#include "../../includes/packet.h"
+#include "../../includes/buffer.h"
+#include "../../includes/socket.h"
+
+interface Consumer {
+    command uint8_t* read(socket_t fd);
+
+    command void tick();
+}

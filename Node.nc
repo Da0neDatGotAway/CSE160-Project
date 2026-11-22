@@ -14,6 +14,7 @@
 #include "includes/channels.h"
 #include "includes/routing.h"
 #include "includes/socket.h"
+#include "includes/buffer.h"
 
 module Node{
    uses interface Boot;
@@ -34,6 +35,8 @@ module Node{
    uses interface Routing;
    uses interface DistanceVector;
    uses interface Transport;
+   uses interface InputBuffer;
+   uses interface Consumer;
 }
 
 implementation{
@@ -44,6 +47,8 @@ implementation{
    
    //we need to do this because we can't print dbg on multiple lines since it come pre-packed with all the log data. Honestly because of that it should auto newline. Seems like a jank logging function honestly
    char strBuf[300];
+
+   char dataBuf[BUFFER_SIZE];
 
    // Prototypes
    //void makePack(pack *Package, uint16_t src, uint16_t dest, uint16_t TTL, uint16_t Protocol, uint16_t seq, uint8_t *payload, uint8_t length);
@@ -220,12 +225,30 @@ implementation{
 
    event void CommandHandler.sendTCP(uint8_t socket, uint8_t *payload, uint16_t length){
       dbg(COMMAND_CHANNEL, "Sending TCP packet on socket %d with data %s\n", socket, payload);
-      call Transport.write(socket, payload, length);
+      call InputBuffer.write(socket, payload, length);
    }
 
    event void CommandHandler.closeTCP(uint8_t socket){
       dbg(COMMAND_CHANNEL, "Closing local TCP socket: %d\n", socket);
       call Transport.close(socket);
+   }
+
+   event void CommandHandler.readTCP(uint8_t socket){
+      dbg(COMMAND_CHANNEL, "Reading TCP packet on socket %d\n", socket);
+      //print out the data
+      tempPointer = call Consumer.read(socket);
+      if (tempPointer == NULL){
+         dbg(GENERAL_CHANNEL, "No data available on socket %d\n", socket);
+         return;
+      }
+      for (i = 0; i < BUFFER_SIZE; i++){
+         dataBuf[i] = ((uint8_t*)tempPointer)[i];
+      }
+      dbg(GENERAL_CHANNEL, "Data on socket %d: %s\n", socket, dataBuf);
+   }
+
+   event void CommandHandler.printSocket(uint8_t socket){
+      call Transport.printSocket(socket);
    }
 
    event void CommandHandler.printLinkState(){}
@@ -249,5 +272,8 @@ implementation{
 
    event void TCPTimer.fired() {
       call Transport.tick();
+      call InputBuffer.tick();
+      call Consumer.tick();
+      
    }
 }

@@ -57,4 +57,10 @@ implementation {
 
     components TransportC;
     Node.Transport -> TransportC;
+
+    components InputBufferC;
+    Node.InputBuffer -> InputBufferC;
+
+    components ConsumerC;
+    Node.Consumer -> ConsumerC;
 }

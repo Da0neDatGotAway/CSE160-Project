@@ -17,6 +17,8 @@ class TestSim:
     CMD_APP_CLIENT=10
     CMD_WRITE=11
     CMD_CLOSE=12
+    CMD_READ=13
+    CMD_PRINT_SOCKET=14
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -140,12 +142,18 @@ class TestSim:
         return self.sendCMD(self.CMD_APP_CLIENT, source, "{0}{1}".format(chr(destination),chr(port)));
 
     def sendTCP(self, source, socket, payload, length):
-        print("Sending TCP packet on socket %d with data %s\n" % (socket, payload))
+        #print("Sending TCP packet on socket %d with data %s\n" % (socket, payload))
         self.sendCMD(
             self.CMD_WRITE,
             source,
             "{0}{1}{2}".format(chr(socket), chr(length), payload)
         )
+
+    def readTCP(self, source, socket):
+        self.sendCMD(self.CMD_READ, source, "{0}".format(chr(socket)))
+    
+    def printSocket(self, source, socket):
+        self.sendCMD(self.CMD_PRINT_SOCKET, source, "{0}".format(chr(socket)))
 
     def closeTCP(self, source, socket):
         self.sendCMD(self.CMD_CLOSE,source,"{0}".format(chr(socket)))
