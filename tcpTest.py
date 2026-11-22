@@ -34,11 +34,15 @@ def main():
     s.runTime(250);
     #print(port)
     s.sendTCP(1, 0, "Hello World!123456789", 22);
+    #this 2 runtime is needed or else the command does not get deliverd
+    s.runTime(2);
+    s.sendTCP(9, 0, "aloha", 5);
     s.runTime(200);
-    #s.sendTCP(9, 0, "Goodbye", 7);
 
+    s.sendTCP(9, 0, "Goodbye my only friend", 22);
+    s.runTime(2);
     s.closeTCP(1, 0)
-    s.runTime(900);
+    s.runTime(200);
 
 if __name__ == '__main__':
     main()
