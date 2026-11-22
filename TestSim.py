@@ -31,6 +31,7 @@ class TestSim:
 
     # Project 3
     TRANSPORT_CHANNEL="transport";
+    DEBUG_TRANSPORT_CHANNEL="dbgtrans"
 
     # Personal Debuggin Channels for some of the additional models implemented.
     HASHMAP_CHANNEL="hashmap";

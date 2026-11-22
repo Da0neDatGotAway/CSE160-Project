@@ -21,6 +21,7 @@ def main():
     s.addChannel(s.GENERAL_CHANNEL);
     #s.addChannel(s.ROUTING_CHANNEL);
     s.addChannel(s.TRANSPORT_CHANNEL);
+    #s.addChannel(s.DEBUG_TRANSPORT_CHANNEL);
     #s.addChannel(s.NEIGHBOR_CHANNEL);
 
     #kept just to make sure that this is still working
@@ -32,9 +33,9 @@ def main():
     port = s.connectClient(1, 9, 1);  
     s.runTime(250);
     #print(port)
-    #s.sendTCP(1, 0, "Hello World!", 13);
-    s.sendTCP(9, 0, "Hello World!123456789", 22);
+    s.sendTCP(1, 0, "Hello World!123456789", 22);
     s.runTime(200);
+    #s.sendTCP(9, 0, "Goodbye", 7);
 
     s.closeTCP(1, 0)
     s.runTime(900);

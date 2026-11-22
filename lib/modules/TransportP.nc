@@ -230,6 +230,9 @@ implementation{
             l = package->payload[1];
             signedI = isAckNew(l, package->payload[5]);
             sockets[l].recieveWindow = package->payload[4];
+            if(TOS_NODE_ID == 1){
+               dbg(TRANSPORT_CHANNEL, "RecievedDataPacket\n");
+            }
             if(signedI > 0){
                //Finish the handshake
                if(sockets[l].state == SYN_RCVD){
@@ -277,7 +280,7 @@ implementation{
 
                   //Now we send an ack here if we don't have our own data to send (otherwise we use that)
                   if(sockets[l].lastWritten == 0){
-                     sendTCPData(i, sockets[l].lastAck+1+l, (uint8_t*)&(payload[8]), 0);
+                     sendTCPData(l, sockets[l].lastAck+1+l, (uint8_t*)&(payload[8]), 0);
                   }
                   dbg(TRANSPORT_CHANNEL, "Byte seq num %d read from connection to %d on port %d, read buffer size: %d\n", package->payload[3], package->src, package->payload[0], sockets[l].maxRead);
                }else{
