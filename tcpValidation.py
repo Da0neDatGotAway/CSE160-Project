@@ -22,6 +22,7 @@ import tempfile
 from TestSim import TestSim
 
 
+VERBOSE_LOG = False
 SEED = 16022
 TOPOLOGY = "validation_line.topo"
 NOISE = "no_noise.txt"
@@ -36,9 +37,13 @@ DATA_SIZE = 13
 SOCKET_BUFFER_SIZE = 128
 TRANSFER_LENGTH = 1030
 SOCKET_RESEND = 10000
+CURRENT_SIM = None
+GENERAL_LOG = None
+TRANSPORT_LOG = None
 
 
 def make_sim():
+    global CURRENT_SIM, GENERAL_LOG, TRANSPORT_LOG
     sim = TestSim()
     sim.moteids = []
     sim.numMote = 0
@@ -50,9 +55,14 @@ def make_sim():
     sim.bootNode(3)
     sim.bootNode(4)
     output = tempfile.TemporaryFile(mode="w+")
+    GENERAL_LOG = tempfile.TemporaryFile(mode="w+")
+    TRANSPORT_LOG = tempfile.TemporaryFile(mode="w+")
+    CURRENT_SIM = sim
     sim.addChannel(sim.COMMAND_CHANNEL, output)
+    sim.addChannel(sim.GENERAL_CHANNEL, GENERAL_LOG)
     sim.addChannel(sim.GENERAL_CHANNEL, output)
     sim.addChannel(sim.ROUTING_CHANNEL, output)
+    sim.addChannel(sim.TRANSPORT_CHANNEL, TRANSPORT_LOG)
     sim.addChannel(sim.TRANSPORT_CHANNEL, output)
     sim.addChannel(sim.DEBUG_TRANSPORT_CHANNEL, output)
     sim.runTime(STARTUP_WAIT)
@@ -62,6 +72,35 @@ def make_sim():
 def read_output(output):
     output.seek(0)
     return output.read()
+
+
+def read_channel(output):
+    if output is None:
+        return ""
+    output.flush()
+    output.seek(0)
+    return output.read()
+
+
+def clear_output(output):
+    global GENERAL_LOG, TRANSPORT_LOG
+    output.seek(0)
+    output.truncate(0)
+    for channel in (GENERAL_LOG, TRANSPORT_LOG):
+        if channel is not None:
+            channel.seek(0)
+            channel.truncate(0)
+
+
+def print_verbose_log(scenario, passed):
+    if not VERBOSE_LOG:
+        return
+    status = "PASS" if passed else "FAIL"
+    print "\n===== %s %s: GENERAL CHANNEL =====" % (status, scenario)
+    print read_channel(GENERAL_LOG)
+    print "===== %s %s: TRANSPORT CHANNEL =====" % (status, scenario)
+    print read_channel(TRANSPORT_LOG)
+    print "===== END %s %s CHANNEL LOG =====\n" % (status, scenario)
 
 
 def assert_log(output, text):
@@ -125,11 +164,6 @@ def read_all(sim, output, times=10):
     if chunks:
         return "".join(chunks)
     return ""
-
-
-def clear_output(output):
-    output.seek(0)
-    output.truncate(0)
 
 
 def baseline():
@@ -258,12 +292,19 @@ def control_loss_scenario(kind):
         sim.runTime(TIMEOUT_WAIT)
     elif kind == "final-ack":
         sim.runTime(HANDSHAKE_WAIT)
+        remove_bidirectional(sim, 1, 2)
         sim.sendTCP(1, 0, "FINALACK", 8)
+        sim.runTime(30)
+        add_bidirectional(sim, 1, 2)
         sim.runTime(TIMEOUT_WAIT)
 
     sim.runTime(HANDSHAKE_WAIT)
     assert_log(output, "Connecting to 4")
-    assert_log(output, "resending SYN")
+    if kind == "final-ack":
+        assert_log(output, "State changed from SYN_RCVD to ESTABLISHED")
+        assert_log(output, "Received ACK")
+    else:
+        assert_log(output, "resending SYN")
     print "PASS control-loss %s: bounded repeatable retry/duplicate handling run" % kind
 
 
@@ -274,16 +315,19 @@ def close_loss():
     clear_output(output)
     connect(sim, output)
 
-    sim.r.remove(2, 1)
+    remove_bidirectional(sim, 1, 2)
     sim.closeTCP(1, 0)
     sim.runTime(30)
-    sim.r.add(2, 1, -54.0)
-    sim.runTime(CLOSE_WAIT + 400)
+    add_bidirectional(sim, 1, 2)
+    sim.runTime(CLOSE_WAIT * 8)
 
     assert_log(output, "Buffer empty. Sending close packet")
     assert_log(output, "retrying CLOSE")
     if "Released socket" not in read_output(output):
-        raise AssertionError("close ACK loss did not reach bounded socket release in 900 units\n%s" % read_output(output))
+        raise AssertionError(
+            "close-loss did not reach bounded socket release in %d simulated units\n%s"
+            % (CLOSE_WAIT * 8, read_output(output))
+        )
     print "PASS close-loss: close retries and bounded cleanup/release"
 
 
@@ -341,9 +385,11 @@ def main():
             raise SystemExit("unknown scenario: %s" % name)
         try:
             SCENARIOS[name]()
+            print_verbose_log(name, True)
         except AssertionError as error:
             failures += 1
             print "FAIL %s: %s" % (name, error)
+            print_verbose_log(name, False)
 
     if failures:
         raise SystemExit("%d TCP validation scenario(s) failed" % failures)
