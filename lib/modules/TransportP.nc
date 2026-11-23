@@ -144,6 +144,7 @@ implementation{
       }
       //TODO: fail if already in use / not closed
       sockets[fd].dest = *addr;
+      sockets[fd].failedAttempts = 0;
       return SUCCESS;
    }
 
@@ -228,9 +229,10 @@ implementation{
                destAddr.addr = package->src;
                destAddr.port = package->payload[0];
                call Transport.bind(i, &destAddr);
-
+               
             
             sockets[i].state = SYN_RCVD;
+            sockets[i].failedAttempts = 0;
             sendTCP((uint8_t)i, &(sockets[i].dest), SYN_ACK, 1, SOCKET_BUFFER_SIZE, 0, (uint8_t*)&(sendPack.payload),0);
             break;
          case SYN_ACK:
@@ -265,7 +267,7 @@ implementation{
                shrinkList((uint8_t)signedI, (uint8_t*)(&(sockets[l].sendBuff[0])), SOCKET_BUFFER_SIZE);
                sockets[l].lastRecievedTime = call LocalTime.get();
                dbg(TRANSPORT_CHANNEL, "Received ACK %d from %d on port %d, seq %d\n", package->payload[5], package->src, package->payload[0], package->payload[3]);
-               
+               sockets[i].failedAttempts = 0;
                //Handles sending the close once our write buffer is empty
                if(canSendClose(l)){
                   informClose(l);
@@ -295,7 +297,7 @@ implementation{
                      sockets[l].maxRead++;
                   }
                   dbg(GENERAL_CHANNEL, "Got %d bytes (seq %d), maxRead now %d, lastByteRcvd now %d\n", j, package->payload[3], sockets[l].maxRead, sockets[l].lastByteRcvd);
-
+                  
                   //i is now the amount of bytes we were able to write
                   sockets[l].lastByteRcvd += i;    
 
@@ -304,6 +306,7 @@ implementation{
                      dbg(TRANSPORT_CHANNEL, "Sending ACK %d to %d on port %d\n", sockets[l].lastByteRcvd, package->src, package->payload[0]);
                      sendTCPData(l, getSendSequence(l, 0), (uint8_t*)&(payload[8]), 0);
                   }
+                  sockets[i].failedAttempts = 0;
                   dbg(TRANSPORT_CHANNEL, "Byte seq num %d read from connection to %d on port %d, read buffer size: %d\n", package->payload[3], package->src, package->payload[0], sockets[l].maxRead);
                }else{
                   dbg(TRANSPORT_DEBUG_CHANNEL, "Received skipped SQN %d. Expected %d, from %d on port %d\n", package->payload[3], sockets[l].lastByteRcvd, package->src, package->payload[0]);
@@ -472,10 +475,15 @@ implementation{
    command void Transport.tick(){
       for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
          if(sockets[i].state == SYN_SENT){
+            if (sockets[i].failedAttempts > SOCKET_MAX_ATTEMPTS){
+               dbg(TRANSPORT_CHANNEL, "No response from %d on port %d, closing socket\n", sockets[i].dest.addr, sockets[i].dest.port);
+               call Transport.release(i);
+            } else 
             if(call LocalTime.get() - sockets[i].lastRecievedTime > SOCKET_RESEND){
                dbg(TRANSPORT_CHANNEL, "No response from %d on port %d, resending SYN\n", sockets[i].dest.addr, sockets[i].dest.port);
                sendTCP(i, &(sockets[i].dest), SYN, 1, SOCKET_BUFFER_SIZE, 0, (uint8_t*)&(sendPack.payload),0);
                sockets[i].lastRecievedTime = call LocalTime.get();
+               sockets[i].failedAttempts++;
             }
          }
          else if(sockets[i].state == ESTABLISHED){
@@ -488,10 +496,15 @@ implementation{
                      call Transport.release(i);
                   }
                }else{
+                  if (sockets[i].failedAttempts > SOCKET_MAX_ATTEMPTS){
+                     dbg(TRANSPORT_CHANNEL, "No response from %d on port %d, closing socket\n", sockets[i].dest.addr, sockets[i].dest.port);
+                     call Transport.release(i);
+                  } else 
                   if(j - sockets[i].lastRecievedTime > SOCKET_RESEND) {
                      dbg(TRANSPORT_CHANNEL, "No response from %d on port %d, retrying CLOSE\n", sockets[i].dest.addr, sockets[i].dest.port);
                      informClose(i);
                      sockets[i].lastRecievedTime = j;
+                     sockets[i].failedAttempts++;
                   }
                }
             }

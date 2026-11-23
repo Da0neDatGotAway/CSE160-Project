@@ -7,6 +7,7 @@ enum{
     ROOT_SOCKET_PORT = 255,
     SOCKET_BUFFER_SIZE = 128,
     SOCKET_RESEND = 10000,
+    SOCKET_MAX_ATTEMPTS = 5,
     DATA_SIZE = 13,
 };
 
@@ -52,6 +53,8 @@ typedef struct socket_store_t{
     uint8_t flag;
     enum socket_state state;
     socket_addr_t dest;
+
+    uint8_t failedAttempts;
 
     // This is the sender portion.
     uint8_t sendBuff[SOCKET_BUFFER_SIZE];

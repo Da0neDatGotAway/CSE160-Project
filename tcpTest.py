@@ -36,7 +36,7 @@ def main():
     s.routeDMP(1);
     s.runTime(1);
     print("AM I STUPID?")
-    s.connectClient(1, 9, 1);  
+    s.connectClient(1, 25, 1);  
     s.runTime(250);
 
     log_capture.seek(0, 2)
