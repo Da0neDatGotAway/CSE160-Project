@@ -265,20 +265,21 @@ def flow_control():
     clear_output(output)
     connect(sim, output)
 
-    destination_port = get_destination_port(sim, 1, 0)
-    sim.pauseReceiver(4, destination_port)
-    sim.runTime(20)
-
     text = "".join("X" for unused in range(SOCKET_BUFFER_SIZE))
     send_in_segments(sim, text)
     sim.runTime(300)
 
     log = read_output(output)
+    if "buffpos now 128" not in log:
+        raise AssertionError("receiver did not reach 128-byte application fill\n%s" % log)
     if "Got " not in log:
-        raise AssertionError("receiver did not accept data while paused\n%s" % log)
+        raise AssertionError("receiver did not accept data before the flow-control pause\n%s" % log)
 
-    sim.resumeReceiver(4, destination_port)
-    sim.runTime(300)
+    destination_port = get_destination_port(sim, 1, 0)
+    sim.readTCP(4, destination_port)
+    sim.runTime(20)
+    sim.readTCP(4, destination_port)
+    sim.runTime(20)
 
     log = read_output(output)
     if "buffpos now 128" not in log:
