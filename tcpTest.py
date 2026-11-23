@@ -36,13 +36,13 @@ def main():
     s.routeDMP(1);
     s.runTime(1);
     print("AM I STUPID?")
-    s.connectClient(1, 25, 1);  
+    s.connectClient(1, 9, 1);  
     s.runTime(250);
 
     log_capture.seek(0, 2)
     start_pos = log_capture.tell()
 
-    s.printSocket(9, 0);
+    s.printSocket(1, 0);
     s.runTime(1);
     log_capture.flush()
     log_capture.seek(start_pos)

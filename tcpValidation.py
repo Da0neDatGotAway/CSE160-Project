@@ -154,10 +154,26 @@ def send_in_segments(sim, text):
         offset += length
 
 
+def get_destination_port(sim, source, socket):
+    GENERAL_LOG.flush()
+    GENERAL_LOG.seek(0, 2)
+    start = GENERAL_LOG.tell()
+    sim.printSocket(source, socket)
+    sim.runTime(1)
+    GENERAL_LOG.flush()
+    GENERAL_LOG.seek(start)
+    log = GENERAL_LOG.read()
+    match = re.search(r"Socket %d: dest port (\d+)" % socket, log)
+    if not match:
+        raise AssertionError("printSocket did not report a destination port on source node %d socket %d" % (source, socket))
+    return int(match.group(1))
+
+
 def read_all(sim, output, times=10):
     chunks = []
+    destination_port = get_destination_port(sim, 1, 0)
     for unused in range(times):
-        sim.readTCP(4, 0)
+        sim.readTCP(4, destination_port)
         sim.runTime(20)
     log = read_output(output)
     chunks = re.findall(r"Data: ([^\n]*)", log)
@@ -259,9 +275,10 @@ def flow_control():
     if "Got " not in log:
         raise AssertionError("receiver did not accept data before the flow-control pause\n%s" % log)
 
-    sim.readTCP(4, 0)
+    destination_port = get_destination_port(sim, 1, 0)
+    sim.readTCP(4, destination_port)
     sim.runTime(20)
-    sim.readTCP(4, 0)
+    sim.readTCP(4, destination_port)
     sim.runTime(20)
 
     log = read_output(output)
