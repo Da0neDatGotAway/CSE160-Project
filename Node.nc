@@ -269,9 +269,37 @@ implementation{
 
    event void CommandHandler.printDistanceVector(){}
 
-   event void CommandHandler.setTestServer(){}
+   event void CommandHandler.setTestServer(uint8_t listenPort){
+      socket_t fd;
+      if(listenPort >= MAX_NUM_OF_SOCKETS){
+         dbg(GENERAL_CHANNEL, "Test server port %d is outside socket range\n", listenPort);
+         return;
+      }
+      fd = listenPort;
+      tempSocket.addr = TOS_NODE_ID;
+      tempSocket.port = listenPort;
+      if(call Transport.bind(fd, &tempSocket) == SUCCESS){
+         call Transport.listen(fd);
+         dbg(GENERAL_CHANNEL, "Test server listening on node %d port %d socket %d\n",
+             TOS_NODE_ID, listenPort, fd);
+      }
+   }
 
    event void CommandHandler.setTestClient(){}
+
+   event void CommandHandler.testClose(uint8_t serverAddress, uint8_t srcPort, uint8_t destPort){
+      dbg(COMMAND_CHANNEL, "Test close client connection: server %d src port %d dest port %d\n",
+          serverAddress, srcPort, destPort);
+      call Transport.close((socket_t)0);
+   }
+
+   event void CommandHandler.testPause(uint8_t socket){
+      call Consumer.pauseConsumer(socket);
+   }
+
+   event void CommandHandler.testResume(uint8_t socket){
+      call Consumer.resumeConsumer(socket);
+   }
 
    event void CommandHandler.setAppServer(){}
 

@@ -74,8 +74,8 @@ implementation {
         break;
 
       case CMD_TEST_SERVER:
-        dbg(COMMAND_CHANNEL, "Command Type: Client\n");
-        signal CommandHandler.setTestServer();
+        dbg(COMMAND_CHANNEL, "Command Type: Test Server\n");
+        signal CommandHandler.setTestServer(buff[0]);
         break;
 
       case CMD_APP_CLIENT:
@@ -100,6 +100,18 @@ implementation {
       case CMD_PRINT_SOCKET:
         dbg(COMMAND_CHANNEL, "Command Type: Print Socket\n");
         signal CommandHandler.printSocket(buff[0]);
+        break;
+
+      case CMD_TEST_CLOSE:
+        signal CommandHandler.testClose(buff[0], buff[1], buff[2]);
+        break;
+
+      case CMD_TEST_PAUSE:
+        signal CommandHandler.testPause(buff[0]);
+        break;
+
+      case CMD_TEST_RESUME:
+        signal CommandHandler.testResume(buff[0]);
         break;
 
       default:

@@ -14,11 +14,16 @@ class TestSim:
     CMD_PING = 0
     CMD_NEIGHBOR_DUMP = 1
     CMD_ROUTE_DUMP=3
+    CMD_TEST_CLIENT=4
+    CMD_TEST_SERVER=5
     CMD_APP_CLIENT=10
     CMD_WRITE=11
     CMD_CLOSE=12
     CMD_READ=13
     CMD_PRINT_SOCKET=14
+    CMD_TEST_CLOSE=15
+    CMD_TEST_PAUSE=16
+    CMD_TEST_RESUME=17
 
     # CHANNELS - see includes/channels.h
     COMMAND_CHANNEL="command";
@@ -154,6 +159,22 @@ class TestSim:
     
     def printSocket(self, source, socket):
         self.sendCMD(self.CMD_PRINT_SOCKET, source, "{0}".format(chr(socket)))
+
+    def testServer(self, serverAddress, listenPort):
+        return self.sendCMD(self.CMD_TEST_SERVER, serverAddress, chr(listenPort))
+
+    def testClient(self, clientAddress, serverAddress, srcPort, destPort, transferBytes):
+        return self.connectClient(clientAddress, serverAddress, destPort)
+
+    def clientClose(self, clientAddress, serverAddress, srcPort, destPort):
+        payload = "{0}{1}{2}".format(chr(serverAddress), chr(srcPort), chr(destPort))
+        return self.sendCMD(self.CMD_TEST_CLOSE, clientAddress, payload)
+
+    def pauseReceiver(self, receiverAddress, socket):
+        return self.sendCMD(self.CMD_TEST_PAUSE, receiverAddress, chr(socket))
+
+    def resumeReceiver(self, receiverAddress, socket):
+        return self.sendCMD(self.CMD_TEST_RESUME, receiverAddress, chr(socket))
 
     def closeTCP(self, source, socket):
         self.sendCMD(self.CMD_CLOSE,source,"{0}".format(chr(socket)))

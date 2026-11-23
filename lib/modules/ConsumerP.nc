@@ -12,6 +12,7 @@ implementation {
   uint16_t chunkLength = 0;
   char printChunk[17];
   buffer_t buffer[MAX_NUM_OF_SOCKETS];
+  uint8_t paused[MAX_NUM_OF_SOCKETS];
 
     command uint8_t* Consumer.read(socket_t fd) {
         //return the current buffer pointer
@@ -27,13 +28,31 @@ implementation {
         if (fd >= MAX_NUM_OF_SOCKETS) {
             return 0;
         }
-        return buffer[fd].buffpos;
+        j = buffer[fd].buffpos;
+        buffer[fd].buffpos = 0;
+        buffer[fd].bufferlen = 0;
+        return j;
+    }
+
+    command void Consumer.pauseConsumer(socket_t fd) {
+        if (fd < MAX_NUM_OF_SOCKETS) {
+            paused[fd] = 1;
+        }
+    }
+
+    command void Consumer.resumeConsumer(socket_t fd) {
+        if (fd < MAX_NUM_OF_SOCKETS) {
+            paused[fd] = 0;
+        }
     }
 
     command void Consumer.tick() {
         //read from the transport buffer and store it in the buffer
         for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
             buffer[i].socket = i;
+            if (paused[i]) {
+                continue;
+            }
             if (buffer[i].buffpos >= BUFFER_SIZE) {
                 continue;
             }
